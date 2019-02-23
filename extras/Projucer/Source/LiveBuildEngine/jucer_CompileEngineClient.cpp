@@ -106,10 +106,18 @@ public:
         server = createClangServer (command);
        #endif
 
-        if (connectToPipe (pipeName, 10000))
-            MessageTypes::sendPing (*this);
-        else
-            jassertfalse;
+        for (int i = 0; i < 20; ++i)
+        {
+            if (connectToPipe (pipeName, 10000))
+            {
+                MessageTypes::sendPing (*this);
+                break;
+            }
+
+            Thread::sleep (50);
+        }
+
+        jassert (isConnected());
 
         startTimer (serverKeepAliveTimeout);
     }
@@ -202,7 +210,7 @@ public:
         openedOk = true;
     }
 
-    ~ChildProcess()
+    ~ChildProcess() override
     {
         projectRoot.removeListener (this);
 
@@ -634,7 +642,7 @@ struct CompileEngineChildProcess::Editor  : private CodeDocument::Listener,
         document.addListener (this);
     }
 
-    ~Editor()
+    ~Editor() override
     {
         document.removeListener (this);
     }

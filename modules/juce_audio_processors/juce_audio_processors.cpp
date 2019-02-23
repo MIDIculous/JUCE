@@ -39,8 +39,6 @@
 #include "juce_audio_processors.h"
 #include <juce_gui_extra/juce_gui_extra.h>
 
-#include <numeric>
-
 //==============================================================================
 #if JUCE_MAC
  #if JUCE_SUPPORT_CARBON \
@@ -64,7 +62,6 @@
 
 #if JUCE_PLUGINHOST_AU && (JUCE_MAC || JUCE_IOS)
  #include <AudioUnit/AudioUnit.h>
- #include <map>
 #endif
 
 //==============================================================================
@@ -95,23 +92,8 @@ static inline bool arrayContainsPlugin (const OwnedArray<PluginDescription>& lis
 struct AutoResizingNSViewComponent  : public ViewComponentBaseClass,
                                       private AsyncUpdater
 {
-    void childBoundsChanged (Component*) override
-    {
-        if (recursive)
-        {
-            triggerAsyncUpdate();
-        }
-        else
-        {
-            recursive = true;
-            resizeToFitView();
-            recursive = false;
-        }
-    }
-
-    void handleAsyncUpdate() override  { resizeToFitView(); }
-
-    bool recursive = false;
+    void childBoundsChanged (Component*) override  { triggerAsyncUpdate(); }
+    void handleAsyncUpdate() override              { resizeToFitView(); }
 };
 
 //==============================================================================

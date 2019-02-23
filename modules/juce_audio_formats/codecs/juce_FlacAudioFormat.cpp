@@ -204,7 +204,7 @@ public:
         }
     }
 
-    ~FlacReader()
+    ~FlacReader() override
     {
         FlacNamespace::FLAC__stream_decoder_delete (decoder);
     }
@@ -248,7 +248,7 @@ public:
             }
             else
             {
-                if (startSampleInFile >= (int) lengthInSamples)
+                if (startSampleInFile >= lengthInSamples)
                 {
                     samplesInReservoir = 0;
                 }
@@ -404,7 +404,7 @@ public:
                                                this) == FlacNamespace::FLAC__STREAM_ENCODER_INIT_STATUS_OK;
     }
 
-    ~FlacWriter()
+    ~FlacWriter() override
     {
         if (ok)
         {
