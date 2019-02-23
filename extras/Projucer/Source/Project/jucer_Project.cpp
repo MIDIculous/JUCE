@@ -215,15 +215,7 @@ void Project::initialiseProjectValues()
     splashScreenColourValue.referTo  (projectRoot, Ids::splashScreenColour,  getUndoManager(), "Dark");
     reportAppUsageValue.referTo      (projectRoot, Ids::reportAppUsage,      getUndoManager());
 
-    if (ProjucerApplication::getApp().isPaidOrGPL())
-    {
-        reportAppUsageValue.setDefault (ProjucerApplication::getApp().licenseController->getState().applicationUsageDataState
-                                        == LicenseState::ApplicationUsageData::enabled);
-    }
-    else
-    {
-        reportAppUsageValue.setDefault (true);
-    }
+    reportAppUsageValue.setDefault (false);
 
     cppStandardValue.referTo       (projectRoot, Ids::cppLanguageStandard, getUndoManager(), "14");
 
