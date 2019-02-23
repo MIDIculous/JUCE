@@ -86,8 +86,8 @@ void ProjucerApplication::initialise (const String& commandLine)
         isRunningCommandLine = commandLine.isNotEmpty()
                                 && ! commandLine.startsWith ("-NSDocumentRevisionsDebugMode");
 
-        licenseController.reset (new LicenseController);
-        licenseController->addLicenseStatusChangedCallback (this);
+//        licenseController.reset (new LicenseController);
+//        licenseController->addLicenseStatusChangedCallback (this);
 
         if (isRunningCommandLine)
         {
@@ -174,11 +174,11 @@ void ProjucerApplication::handleAsyncUpdate()
     MenuBarModel::setMacMainMenu (menuModel.get(), &extraAppleMenuItems); //, "Open Recent");
    #endif
 
-    versionChecker.reset (new LatestVersionChecker());
+//    versionChecker.reset (new LatestVersionChecker());
 
     if (licenseController != nullptr)
     {
-        setAnalyticsEnabled (licenseController->getState().applicationUsageDataState == LicenseState::ApplicationUsageData::enabled);
+        setAnalyticsEnabled (false);
         Analytics::getInstance()->logEvent ("Startup", {}, ProjucerAnalyticsEvent::appEvent);
     }
 
@@ -197,8 +197,8 @@ void ProjucerApplication::initialiseWindows (const String& commandLine)
 
     mainWindowList.createWindowIfNoneAreOpen();
 
-    if (licenseController->getState().applicationUsageDataState == LicenseState::ApplicationUsageData::notChosenYet)
-        showApplicationUsageDataAgreementPopup();
+//    if (licenseController->getState().applicationUsageDataState == LicenseState::ApplicationUsageData::notChosenYet)
+//        showApplicationUsageDataAgreementPopup();
 }
 
 static void deleteTemporaryFiles()
