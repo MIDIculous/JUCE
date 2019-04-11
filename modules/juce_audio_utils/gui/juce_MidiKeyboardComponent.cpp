@@ -725,19 +725,29 @@ void MidiKeyboardComponent::updateNoteUnderMouse (Point<float> pos, bool isDown,
     {
         if (newNote != oldNoteDown)
         {
+            bool shouldSendNoteOff = false;
+            bool shouldSendNoteOn = false;
+            
             if (oldNoteDown >= 0)
             {
                 mouseDownNotes.set (fingerNum, -1);
 
                 if (! mouseDownNotes.contains (oldNoteDown))
-                    state.noteOff (midiChannel, oldNoteDown, eventVelocity);
+                    shouldSendNoteOff = true;
             }
 
             if (newNote >= 0 && ! mouseDownNotes.contains (newNote))
             {
-                state.noteOn (midiChannel, newNote, eventVelocity);
+                shouldSendNoteOn = true;
                 mouseDownNotes.set (fingerNum, newNote);
             }
+            
+            // Send noteOn first, for legato
+            if (shouldSendNoteOn)
+                state.noteOn (midiChannel, newNote, eventVelocity);
+            
+            if (shouldSendNoteOff)
+                state.noteOff (midiChannel, oldNoteDown, eventVelocity);
         }
     }
     else if (oldNoteDown >= 0)
