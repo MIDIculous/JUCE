@@ -96,7 +96,8 @@ public:
 
     Point<float> getRawScreenPosition() const noexcept
     {
-        return unboundedMouseOffset + MouseInputSource::getCurrentRawMousePosition();
+        return unboundedMouseOffset + (inputType != MouseInputSource::InputSourceType::touch ? MouseInputSource::getCurrentRawMousePosition()
+                                                                                             : lastScreenPos);
     }
 
     void setScreenPosition (Point<float> p)
