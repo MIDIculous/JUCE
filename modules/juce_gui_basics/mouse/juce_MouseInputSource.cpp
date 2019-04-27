@@ -269,7 +269,8 @@ public:
         if (! isDragging())
             setComponentUnderMouse (findComponentAt (newScreenPos), newScreenPos, time);
 
-        if (newScreenPos != lastScreenPos || forceUpdate)
+        if (newScreenPos != Point<float>(-1, -1)
+            && (newScreenPos != lastScreenPos || forceUpdate))
         {
             cancelPendingUpdate();
             lastScreenPos = newScreenPos;
