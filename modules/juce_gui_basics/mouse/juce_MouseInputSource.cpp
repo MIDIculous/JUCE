@@ -269,11 +269,12 @@ public:
         if (! isDragging())
             setComponentUnderMouse (findComponentAt (newScreenPos), newScreenPos, time);
 
-        if (newScreenPos != Point<float>(-1, -1)
-            && (newScreenPos != lastScreenPos || forceUpdate))
+        if (newScreenPos != lastScreenPos || forceUpdate)
         {
             cancelPendingUpdate();
-            lastScreenPos = newScreenPos;
+
+            if (newScreenPos != MouseInputSource::offscreenMousePos)
+                lastScreenPos = newScreenPos;
 
             if (auto* current = getComponentUnderMouse())
             {
@@ -649,6 +650,8 @@ const float MouseInputSource::invalidRotation = 0.0f;
 
 const float MouseInputSource::invalidTiltX = 0.0f;
 const float MouseInputSource::invalidTiltY = 0.0f;
+
+const Point<float> MouseInputSource::offscreenMousePos { -10.0f, -10.0f };
 
 // Deprecated method
 bool MouseInputSource::hasMouseMovedSignificantlySincePressed() const noexcept  { return pimpl->hasMouseMovedSignificantlySincePressed(); }
