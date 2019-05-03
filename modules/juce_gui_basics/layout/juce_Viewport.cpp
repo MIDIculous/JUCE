@@ -243,7 +243,7 @@ struct Viewport::DragToScrollListener   : private MouseListener,
     {
         if (Desktop::getInstance().getNumDraggingMouseSources() == 1 && ! doesMouseEventComponentBlockViewportDrag (e.eventComponent))
         {
-            auto totalOffset = e.getOffsetFromDragStart().toFloat();
+            auto totalOffset = e.getEventRelativeTo(&viewport).getOffsetFromDragStart().toFloat();
 
             if (! isDragging && totalOffset.getDistanceFromOrigin() > 8.0f)
             {
