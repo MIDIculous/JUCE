@@ -63,6 +63,9 @@ public:
 
         /** Price locale. */
         String priceLocale;
+        
+        /** iOS only: The size in bytes for each downloadable file (if there are any). */
+        Array<int64> downloadSizes;
     };
 
     //==============================================================================

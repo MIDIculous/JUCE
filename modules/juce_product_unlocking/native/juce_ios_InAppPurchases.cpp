@@ -681,8 +681,13 @@ struct InAppPurchases::Pimpl   : public SKDelegateAndPaymentObserver
         auto price        = nsStringToJuce ([numberFormatter stringFromNumber: skProduct.price]);
 
         [numberFormatter release];
-
-        return { identifier, title, description, price, priceLocale };
+        
+        Array<int64> downloadSizes;
+        downloadSizes.ensureStorageAllocated(skProduct.downloadContentLengths.count);
+        for(NSNumber* downloadContentLength in skProduct.downloadContentLengths)
+            downloadSizes.add(downloadContentLength.longLongValue);
+        
+        return { identifier, title, description, price, priceLocale, downloadSizes };
     }
 
     static String SKPaymentTransactionStateToString (SKPaymentTransactionState state)

@@ -474,7 +474,8 @@ struct InAppPurchases::Pimpl    : private AsyncUpdater,
                                                          title.toString(),
                                                          description.toString(),
                                                          price.toString(),
-                                                         priceCurrencyCode.toString() } );
+                                                         priceCurrencyCode.toString(),
+                                                         {} } );
                                     }
 
                                 }
