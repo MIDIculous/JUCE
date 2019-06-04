@@ -185,8 +185,10 @@ public:
             any files that are no longer needed.
 
             After the download is finished, the download object is destroyed and should not be accessed anymore.
+         
+            If the download failed, the error parameter is the NSError* that prevented the content from being downloaded.
         */
-        virtual void productDownloadFinished (Download&, const URL& /*downloadedContentPath*/) {}
+        virtual void productDownloadFinished (Download&, const URL& /*downloadedContentPath*/, void* /* error */) {}
     };
 
     //==============================================================================

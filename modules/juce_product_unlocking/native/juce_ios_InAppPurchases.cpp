@@ -509,8 +509,12 @@ struct InAppPurchases::Pimpl   : public SKDelegateAndPaymentObserver
             auto contentURL = state == SKDownloadStateFinished
                                 ? URL (nsStringToJuce (download.contentURL.absoluteString))
                                 : URL();
+            
+            auto* error = state == SKDownloadStateFailed
+                                ? download.error
+                                : nil;
 
-            owner.listeners.call ([&] (Listener& l) { l.productDownloadFinished (*pendingDownload, contentURL); });
+            owner.listeners.call ([&] (Listener& l) { l.productDownloadFinished (*pendingDownload, contentURL, error); });
 
             if (pdt->canBeMarkedAsFinished())
             {
