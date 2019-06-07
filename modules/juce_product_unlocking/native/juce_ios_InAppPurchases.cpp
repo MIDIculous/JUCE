@@ -191,7 +191,7 @@ struct InAppPurchases::Pimpl   : public SKDelegateAndPaymentObserver
     {
         if (! [SKPaymentQueue canMakePayments])
         {
-            owner.listeners.call ([&] (Listener& l) { l.productPurchaseFinished ({}, false, NEEDS_TRANS ("Payments not allowed")); });
+            owner.listeners.call ([&] (Listener& l) { l.productPurchaseFinished ({}, false, NEEDS_TRANS ("Payments not allowed"), nullptr); });
             return;
         }
 
@@ -382,7 +382,7 @@ struct InAppPurchases::Pimpl   : public SKDelegateAndPaymentObserver
         }
         else
         {
-            owner.listeners.call ([] (Listener& l) { l.productPurchaseFinished ({}, false, NEEDS_TRANS ("Your app is not setup for payments")); });
+            owner.listeners.call ([] (Listener& l) { l.productPurchaseFinished ({}, false, NEEDS_TRANS ("Your app is not setup for payments"), nullptr); });
         }
     }
 
@@ -461,7 +461,7 @@ struct InAppPurchases::Pimpl   : public SKDelegateAndPaymentObserver
             restoredPurchases.add ({ purchase, downloads });
         else
             owner.listeners.call ([&] (Listener& l) { l.productPurchaseFinished ({ purchase, downloads }, success,
-                                                                                 SKPaymentTransactionStateToString (transaction.transactionState)); });
+                                                                                 SKPaymentTransactionStateToString (transaction.transactionState), transaction.error); });
     }
 
     PendingDownloadsTransaction* getPendingDownloadsTransactionForSKTransaction (SKPaymentTransaction* transaction)

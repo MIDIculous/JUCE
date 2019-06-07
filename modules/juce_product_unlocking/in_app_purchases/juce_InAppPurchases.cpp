@@ -71,7 +71,7 @@ void InAppPurchases::purchaseProduct (const String& productIdentifier,
    #else
     Listener::PurchaseInfo purchaseInfo { Purchase { "", productIdentifier, {}, {}, {} }, {} };
 
-    listeners.call ([&] (Listener& l) { l.productPurchaseFinished (purchaseInfo, false, "In-app purchases unavailable"); });
+    listeners.call ([&] (Listener& l) { l.productPurchaseFinished (purchaseInfo, false, "In-app purchases unavailable", nullptr); });
     ignoreUnused (isSubscription, upgradeProductIdentifiers, creditForUnusedSubscription);
    #endif
 }

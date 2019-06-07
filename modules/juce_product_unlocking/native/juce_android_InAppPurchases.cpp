@@ -260,7 +260,7 @@ struct InAppPurchases::Pimpl    : private AsyncUpdater,
     //==============================================================================
     void notifyAboutPurchaseResult (const InAppPurchases::Purchase& purchase, bool success, const String& statusDescription)
     {
-        owner.listeners.call ([&] (Listener& l) { l.productPurchaseFinished ({ purchase, {} }, success, statusDescription); });
+        owner.listeners.call ([&] (Listener& l) { l.productPurchaseFinished ({ purchase, {} }, success, statusDescription, nullptr); });
     }
 
     //==============================================================================
