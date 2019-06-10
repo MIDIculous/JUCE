@@ -95,7 +95,6 @@ struct InAppPurchases::Pimpl   : public SKDelegateAndPaymentObserver
     struct DownloadImpl  : public Download
     {
         DownloadImpl (SKDownload* downloadToUse)  : download (downloadToUse) {}
-        ~DownloadImpl() override { Download::masterReference.clear(); }
 
         String getProductId()      const override  { return nsStringToJuce (download.contentIdentifier); }
         String getContentVersion() const override  { return nsStringToJuce (download.contentVersion); }
@@ -427,7 +426,7 @@ struct InAppPurchases::Pimpl   : public SKDelegateAndPaymentObserver
 
         Purchase purchase { orderId, productId, packageName, purchaseTime, {} };
 
-        Array<WeakReference<Download>> downloads;
+        Array<Download*> downloads;
 
         // If transaction failed or there are no downloads, finish the transaction immediately, otherwise
         // finish the transaction only after all downloads are finished.

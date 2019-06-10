@@ -105,7 +105,7 @@ public:
             cancelled,      /**< The download was cancelled. */
         };
 
-        virtual ~Download() { masterReference.clear(); }
+        virtual ~Download() {}
 
         /** A unique identifier for the in-app product to be downloaded. */
         virtual String getProductId() const = 0;
@@ -118,10 +118,6 @@ public:
 
         /** Returns current status of the download. */
         virtual Status getStatus() const = 0;
-        
-    protected:
-        WeakReference<Download>::Master masterReference;
-        friend class WeakReference<Download>;
     };
 
 
@@ -139,7 +135,7 @@ public:
         struct PurchaseInfo
         {
             Purchase purchase;
-            Array<WeakReference<Download>> downloads;
+            Array<Download*> downloads;
         };
 
         /** Called whenever a purchase is complete, with additional state whether the purchase completed successfully.
