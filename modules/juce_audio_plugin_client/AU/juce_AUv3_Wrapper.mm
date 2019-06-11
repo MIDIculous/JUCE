@@ -1523,11 +1523,13 @@ private:
             // send MIDI
            #if JucePlugin_ProducesMidiOutput && JUCE_AUV3_MIDI_OUTPUT_SUPPORTED
             auto midiOut = [au MIDIOutputEventBlock];
-            MidiMessage msg;
-            int samplePosition;
-
-            for (MidiBuffer::Iterator it (midiMessages); it.getNextEvent (msg, samplePosition);)
-                midiOut (samplePosition, 0, msg.getRawDataSize(), msg.getRawData());
+            if (midiOut) {
+                MidiMessage msg;
+                int samplePosition;
+                
+                for (MidiBuffer::Iterator it (midiMessages); it.getNextEvent (msg, samplePosition);)
+                    midiOut (samplePosition, 0, msg.getRawDataSize(), msg.getRawData());
+            }
            #endif
 
             midiMessages.clear();
