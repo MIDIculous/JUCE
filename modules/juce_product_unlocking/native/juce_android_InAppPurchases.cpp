@@ -469,12 +469,17 @@ struct InAppPurchases::Pimpl    : private AsyncUpdater,
                                         var description       = props[descriptionIdentifier];
                                         var price             = props[priceIdentifier];
                                         var priceCurrencyCode = props[priceCurrencyCodeIdentifier];
+                                        String priceString    = price.toString();
+                                        bool isFree           = (priceString.isNotEmpty()
+                                                                 && CharacterFunctions::isDigit(priceString[0])
+                                                                 && CharacterFunctions::getDoubleValue(priceString.toUTF8()) == 0);
 
                                         products.add ( { productId.toString(),
                                                          title.toString(),
                                                          description.toString(),
-                                                         price.toString(),
+                                                         priceString,
                                                          priceCurrencyCode.toString(),
+                                                         isFree,
                                                          {} } );
                                     }
 

@@ -64,6 +64,9 @@ public:
         /** Price locale. */
         String priceLocale;
         
+        /** Whether the product is free. */
+        bool isFree{ false };
+        
         /** iOS only: The size in bytes for each downloadable file (if there are any). */
         Array<int64> downloadSizes;
     };

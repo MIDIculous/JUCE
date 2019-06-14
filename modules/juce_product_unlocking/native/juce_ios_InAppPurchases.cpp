@@ -692,6 +692,7 @@ struct InAppPurchases::Pimpl   : public SKDelegateAndPaymentObserver
         auto description  = nsStringToJuce (skProduct.localizedDescription);
         auto priceLocale  = nsStringToJuce ([skProduct.priceLocale objectForKey: NSLocaleLanguageCode]);
         auto price        = nsStringToJuce ([numberFormatter stringFromNumber: skProduct.price]);
+        auto isFree       = ([skProduct.price compare: NSDecimalNumber.zero] == NSOrderedSame);
 
         [numberFormatter release];
         
@@ -700,7 +701,7 @@ struct InAppPurchases::Pimpl   : public SKDelegateAndPaymentObserver
         for(NSNumber* downloadContentLength in skProduct.downloadContentLengths)
             downloadSizes.add(downloadContentLength.longLongValue);
         
-        return { identifier, title, description, price, priceLocale, downloadSizes };
+        return { identifier, title, description, price, priceLocale, isFree, downloadSizes };
     }
 
     static String SKPaymentTransactionStateToString (SKPaymentTransactionState state)
