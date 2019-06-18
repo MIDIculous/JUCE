@@ -305,8 +305,6 @@ public:
     static MultiTouchMapper<UITouch*> currentTouches;
 
 private:
-    Array<Rectangle<int>> rectsToDraw;
-    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UIViewComponentPeer)
 
     class AsyncRepaintMessage  : public CallbackMessage
@@ -1042,19 +1040,7 @@ void UIViewComponentPeer::drawRect (CGRect r)
     // NB the CTM on iOS already includes a factor for the display scale, so
     // we'll tell the context that the scale is 1.0 to avoid it using it twice
     CoreGraphicsContext g (cg, getComponent().getHeight(), 1.0f);
-    
-    if (!rectsToDraw.isEmpty()) {
-        RectangleList<int> areasToExclude;
-        areasToExclude.add(Rectangle<int>(ceil(r.origin.x), ceil(r.origin.y), floor(r.size.width), floor(r.size.height)));
-        for(auto rectToDraw : rectsToDraw)
-            areasToExclude.subtract(rectToDraw);
-        
-        for(auto areaToExclude : areasToExclude)
-            g.excludeClipRectangle(areaToExclude);
-        
-        rectsToDraw.clear();
-    }
-    
+
     insideDrawRect = true;
     handlePaint (g);
     insideDrawRect = false;
@@ -1107,13 +1093,10 @@ void Desktop::allowedOrientationsChanged()
 //==============================================================================
 void UIViewComponentPeer::repaint (const Rectangle<int>& area)
 {
-    if (insideDrawRect || ! MessageManager::getInstance()->isThisTheMessageThread()) {
+    if (insideDrawRect || ! MessageManager::getInstance()->isThisTheMessageThread())
         (new AsyncRepaintMessage (this, area))->post();
-    }
-    else {
-        rectsToDraw.add(area);
+    else
         [view setNeedsDisplayInRect: convertToCGRect (area)];
-    }
 }
 
 void UIViewComponentPeer::performAnyPendingRepaintsNow()
