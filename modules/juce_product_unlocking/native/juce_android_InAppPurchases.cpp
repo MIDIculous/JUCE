@@ -753,7 +753,7 @@ struct InAppPurchases::Pimpl    : private AsyncUpdater,
             {
                 const auto& result = getProductsBoughtJobResults.getReference (i);
 
-                owner.listeners.call ([&] (Listener& l) { l.purchasesListRestored (result.purchases, result.success, result.statusDescription); });
+                owner.listeners.call ([&] (Listener& l) { l.purchasesListRestored (result.purchases, result.success, result.statusDescription, nullptr); });
                 getProductsBoughtJobResults.remove (i);
             }
         }

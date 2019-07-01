@@ -160,8 +160,10 @@ public:
 
             NOTE: It is possible to receive this callback for the same purchase multiple times. If that happens,
             only the newest set of downloads and the newest orderId will be valid, the old ones should be not used anymore!
+         
+            iOS-only: If the purchase failed, the error parameter MAY be set to the NSError* that prevented the list from being restored. Can be null.
         */
-        virtual void purchasesListRestored (const Array<PurchaseInfo>&, bool /*success*/, const String& /*statusDescription*/) {}
+        virtual void purchasesListRestored (const Array<PurchaseInfo>&, bool /*success*/, const String& /*statusDescription*/, void* /* error */) {}
 
         /** Called whenever a product consumption finishes. */
         virtual void productConsumed (const String& /*productId*/, bool /*success*/, const String& /*statusDescription*/) {}
