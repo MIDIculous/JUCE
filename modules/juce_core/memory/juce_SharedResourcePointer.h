@@ -81,6 +81,8 @@ template <typename SharedObjectType>
 class SharedResourcePointer
 {
 public:
+    static_assert(!std::is_const<SharedObjectType>::value, "Having both SharedResourcePointer<const T> and SharedResourcePointer<T> would create separate instances. It's better to just omit the const.");
+    
     /** Creates an instance of the shared object.
         If other SharedResourcePointer objects for this type already exist, then
         this one will simply point to the same shared object that they are already
