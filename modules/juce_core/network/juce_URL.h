@@ -358,8 +358,8 @@ public:
             virtual ~Listener();
 
             /** Called when the download has finished. Be aware that this callback may
-                come on an arbitrary thread. */
-            virtual void finished (URL::DownloadTask* task, bool success) = 0;
+                come on an arbitrary thread. If non-null, the error parameter is an NSError*. */
+            virtual void finished (URL::DownloadTask* task, bool success, void* error) = 0;
 
             /** Called periodically by the OS to indicate download progress.
                 Beware that this callback may come on an arbitrary thread.

@@ -93,7 +93,7 @@ struct FallbackDownloadTask  : public URL::DownloadTask,
         finished = true;
 
         if (listener != nullptr && ! threadShouldExit())
-            listener->finished (this, ! error);
+            listener->finished (this, ! error, nullptr);
     }
 
     //==============================================================================

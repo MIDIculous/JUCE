@@ -517,9 +517,10 @@ struct BackgroundDownloadTask  : public URL::DownloadTask
     void didFinishDownloadingToURL (NSURL* location)
     {
         NSFileManager* fileManager = [[NSFileManager alloc] init];
+        NSError* nsError = nil;
         error = ([fileManager moveItemAtURL: location
                                       toURL: createNSURLFromFile (targetLocation)
-                                      error: nil] == NO);
+                                      error: &nsError] == NO);
         httpCode = 200;
         finished = true;
 
@@ -533,7 +534,7 @@ struct BackgroundDownloadTask  : public URL::DownloadTask
                 listener->progress (this, downloaded, contentLength);
             }
 
-            listener->finished (this, !error);
+            listener->finished (this, !error, nsError);
         }
     }
 
@@ -558,7 +559,7 @@ struct BackgroundDownloadTask  : public URL::DownloadTask
             finished = true;
 
             if (listener != nullptr)
-                listener->finished (this, ! error);
+                listener->finished (this, ! error, nsError);
         }
 
         connectionEvent.signal();
