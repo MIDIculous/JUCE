@@ -73,6 +73,7 @@ public:
           iosDeviceFamilyValue                         (settings, Ids::iosDeviceFamily,                         getUndoManager(), "1,2"),
           iPhoneScreenOrientationValue                 (settings, Ids::iPhoneScreenOrientation,                 getUndoManager(), "portraitlandscape"),
           iPadScreenOrientationValue                   (settings, Ids::iPadScreenOrientation,                   getUndoManager(), "portraitlandscape"),
+          onDemandResourcesValue                       (settings, Ids::onDemandResources,                       getUndoManager()),
           customXcodeResourceFoldersValue              (settings, Ids::customXcodeResourceFolders,              getUndoManager()),
           customXcassetsFolderValue                    (settings, Ids::customXcassetsFolder,                    getUndoManager()),
           hardenedRuntimeValue                         (settings, Ids::hardenedRuntime,                         getUndoManager()),
@@ -134,6 +135,7 @@ public:
     String getiPhoneScreenOrientationString() const    { return iPhoneScreenOrientationValue.get(); }
     String getiPadScreenOrientationString() const      { return iPadScreenOrientationValue.get(); }
 
+    String getOnDemandResourcesString() const          { return onDemandResourcesValue.get(); }
     String getCustomResourceFoldersString() const      { return customXcodeResourceFoldersValue.get().toString().replaceCharacters ("\r\n", "::"); }
     String getCustomXcassetsFolderString() const       { return customXcassetsFolderValue.get(); }
     String getCustomLaunchStoryboardString() const     { return customLaunchStoryboardValue.get(); }
@@ -222,6 +224,11 @@ public:
                        "resource and will be used for the app's launch screen, otherwise a default blank launch storyboard will be used. "
                        "The file path should be relative to the project folder.");
         }
+        
+        props.add (new TextPropertyComponent (onDemandResourcesValue, "On-Demand Resources", 8192, true),
+                   "You can specify a list of files here (separated by newlines). "
+                   "Each file will then be added to the Xcode project as an On-Demand Resource. "
+                   "The On-Demand Resource Tag is the file name without extension.");
 
         props.add (new TextPropertyComponent (customXcodeResourceFoldersValue, "Custom Xcode Resource Folders", 8192, true),
                    "You can specify a list of custom resource folders here (separated by newlines or whitespace). "
@@ -1859,7 +1866,7 @@ private:
 
     mutable OwnedArray<ValueTree> pbxBuildFiles, pbxFileReferences, pbxGroups, misc, projectConfigs, targetConfigs;
     mutable StringArray resourceIDs, sourceIDs, targetIDs;
-    mutable StringArray frameworkFileIDs, embeddedFrameworkIDs, rezFileIDs, resourceFileRefs, subprojectFileIDs;
+    mutable StringArray frameworkFileIDs, embeddedFrameworkIDs, rezFileIDs, resourceFileRefs, subprojectFileIDs, knownAssetTags;
     mutable Array<std::pair<String, String>> subprojectReferences;
     mutable File menuNibFile, iconFile;
     mutable StringArray buildProducts;
@@ -1871,7 +1878,7 @@ private:
                      extraFrameworksValue, frameworkSearchPathsValue, extraCustomFrameworksValue, embeddedFrameworksValue,
                      postbuildCommandValue, prebuildCommandValue,
                      duplicateAppExResourcesFolderValue, iosDeviceFamilyValue, iPhoneScreenOrientationValue,
-                     iPadScreenOrientationValue, customXcodeResourceFoldersValue, customXcassetsFolderValue,
+                     iPadScreenOrientationValue, onDemandResourcesValue, customXcodeResourceFoldersValue, customXcassetsFolderValue,
                      hardenedRuntimeValue, hardenedRuntimeOptionsValue,
                      microphonePermissionNeededValue, microphonePermissionsTextValue, cameraPermissionNeededValue, cameraPermissionTextValue,
                      uiFileSharingEnabledValue, uiSupportsDocumentBrowserValue, uiStatusBarHiddenValue, documentExtensionsValue, iosInAppPurchasesValue,
@@ -1906,6 +1913,7 @@ private:
         addCustomFrameworks();
         addEmbeddedFrameworks();
 
+        addOnDemandResources();
         addCustomResourceFolders();
         addPlistFileReferences();
 
@@ -2609,6 +2617,18 @@ private:
             for (auto& target : targets)
                 target->addCopyFilesPhase ("Embed Frameworks", embeddedFrameworkIDs, kFrameworksFolder);
     }
+    
+    void addOnDemandResources() const
+    {
+        StringArray onDemandResources;
+        
+        onDemandResources.addTokens(getOnDemandResourcesString(), "\n", "");
+        onDemandResources.trim();
+        onDemandResources.removeEmptyStrings();
+        
+        for(const auto& resource : onDemandResources)
+            addOnDemandResource(resource);
+    }
 
     void addCustomResourceFolders() const
     {
@@ -2729,6 +2749,17 @@ private:
         else
             addCustomResourceFolder (customXcassetsPath, "folder.assetcatalog");
     }
+    
+    void addOnDemandResource(String resourcePathRelativeToProjectFolder) const
+    {
+        auto path = RelativePath (resourcePathRelativeToProjectFolder, RelativePath::projectFolder)
+                        .rebased (projectFolder, getTargetFolder(), RelativePath::buildTargetFolder);
+        auto fileRefID = createFileRefID (path.toUnixStyle());
+        auto resourceTag = path.getFileNameWithoutExtension();
+        
+        resourceIDs.add(addBuildFile (path.toUnixStyle(), fileRefID, false, false, nullptr, {}, resourceTag));
+        resourceFileRefs.add (addFileReference (path.toUnixStyle()));
+    }
 
     void addCustomResourceFolder (String folderPathRelativeToProjectFolder, const String fileType = "folder") const
     {
@@ -2785,7 +2816,7 @@ private:
     }
 
     String addBuildFile (const String& path, const String& fileRefID, bool addToSourceBuildPhase, bool inhibitWarnings,
-                         XcodeTarget* xcodeTarget = nullptr, String compilerFlags = {}) const
+                         XcodeTarget* xcodeTarget = nullptr, String compilerFlags = {}, String onDemandResourceTags = {}) const
     {
         auto fileID = createID (path + "buildref");
 
@@ -2804,9 +2835,21 @@ private:
         if (inhibitWarnings)
             compilerFlags += " -w";
 
+        StringArray settings;
         if (compilerFlags.isNotEmpty())
-            v->setProperty ("settings", "{ COMPILER_FLAGS = \"" + compilerFlags.trim() + "\"; }", nullptr);
+            settings.add("COMPILER_FLAGS = \"" + compilerFlags.trim() + "\"");
+        
+        auto assetTags = StringArray::fromTokens(onDemandResourceTags, ",", {});
+        assetTags.trim();
+        assetTags.removeEmptyStrings();
+        if (onDemandResourceTags.isNotEmpty())
+            settings.add("ASSET_TAGS = (" + assetTags.joinIntoString (", ") + ")");
+        
+        if (!settings.isEmpty())
+            v->setProperty ("settings", "{ " + settings.joinIntoString ("; ") + "; }", nullptr);
 
+        knownAssetTags.addArray (assetTags);
+        knownAssetTags.removeDuplicates (/* ignoreCase: */ false);
         pbxBuildFiles.add (v);
         return fileID;
     }
@@ -3402,6 +3445,12 @@ private:
         attributes << "{ LastUpgradeCheck = 0930; "
                    << "ORGANIZATIONNAME = " << getProject().getCompanyNameString().quoted()
                    <<"; ";
+        
+        if (!knownAssetTags.isEmpty()) {
+            attributes << "KnownAssetTags = ("
+                       << knownAssetTags.joinIntoString(",")
+                       << ");";
+        }
 
         if (projectType.isGUIApplication() || projectType.isAudioPlugin())
         {
