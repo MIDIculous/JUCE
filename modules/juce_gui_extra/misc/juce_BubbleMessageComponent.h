@@ -53,7 +53,7 @@ public:
           also delete itself), or you can reuse it somewhere else by calling
           showAt() again.
     */
-    BubbleMessageComponent (int fadeOutLengthMs = 150);
+    BubbleMessageComponent (int fadeOutLengthMs = 150, float maxWidth = 256.f, float paddingX = 20.0f, float paddingY = 14.0f);
 
     /** Destructor. */
     ~BubbleMessageComponent() override;
@@ -117,6 +117,9 @@ public:
 
 private:
     //==============================================================================
+    const float maxWidth;
+    const float paddingX;
+    const float paddingY;
     int fadeOutLength, mouseClickCounter;
     TextLayout textLayout;
     int64 expiryTime;

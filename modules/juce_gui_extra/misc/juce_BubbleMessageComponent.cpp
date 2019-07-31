@@ -27,9 +27,10 @@
 namespace juce
 {
 
-BubbleMessageComponent::BubbleMessageComponent (int fadeOutLengthMs)
-    : fadeOutLength (fadeOutLengthMs), mouseClickCounter (0),
-      expiryTime (0), deleteAfterUse (false)
+BubbleMessageComponent::BubbleMessageComponent (int fadeOutLengthMs, float maxWidth, float paddingX, float paddingY)
+    : maxWidth (maxWidth), paddingX (paddingX), paddingY (paddingY),
+      fadeOutLength (fadeOutLengthMs), mouseClickCounter (0), expiryTime (0),
+      deleteAfterUse (false)
 {
 }
 
@@ -61,7 +62,7 @@ void BubbleMessageComponent::showAt (Component* const component,
 
 void BubbleMessageComponent::createLayout (const AttributedString& text)
 {
-    textLayout.createLayoutWithBalancedLineLengths (text, 256);
+    textLayout.createLayoutWithBalancedLineLengths (text, maxWidth);
 }
 
 void BubbleMessageComponent::init (const int numMillisecondsBeforeRemoving,
@@ -84,21 +85,18 @@ void BubbleMessageComponent::init (const int numMillisecondsBeforeRemoving,
     repaint();
 }
 
-const float bubblePaddingX = 20.0f;
-const float bubblePaddingY = 14.0f;
-
 void BubbleMessageComponent::getContentSize (int& w, int& h)
 {
-    w = (int) (bubblePaddingX + textLayout.getWidth());
-    h = (int) (bubblePaddingY + textLayout.getHeight());
+    w = (int) (paddingX + textLayout.getWidth());
+    h = (int) (paddingY + textLayout.getHeight());
 }
 
 void BubbleMessageComponent::paintContent (Graphics& g, int w, int h)
 {
     g.setColour (findColour (TooltipWindow::textColourId));
 
-    textLayout.draw (g, Rectangle<float> (bubblePaddingX / 2.0f, bubblePaddingY / 2.0f,
-                                          w - bubblePaddingX, h - bubblePaddingY));
+    textLayout.draw (g, Rectangle<float> (paddingX / 2.0f, paddingY / 2.0f,
+                                          w - paddingX, h - paddingY));
 }
 
 void BubbleMessageComponent::timerCallback()
