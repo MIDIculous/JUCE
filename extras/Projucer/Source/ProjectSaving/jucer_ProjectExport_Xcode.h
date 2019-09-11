@@ -3034,10 +3034,12 @@ private:
                 if (project.shouldEnableIAA())
                     entitlements.set ("inter-app-audio", "<true/>");
             }
+            /*
             else
             {
                 entitlements.set ("com.apple.security.app-sandbox", "<true/>");
             }
+             */
         }
         else
         {
