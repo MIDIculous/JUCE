@@ -252,22 +252,19 @@ void Graphics::drawSingleLineText (const String& text, const int startX, const i
 
         if (flags == Justification::left && startX > context.getClipBounds().getRight())
             return;
-
-        GlyphArrangement arr;
-        arr.addLineOfText (context.getFont(), text, (float) startX, (float) baselineY);
-
-        if (flags != Justification::left)
-        {
-            auto w = arr.getBoundingBox (0, -1, true).getWidth();
-
+        
+        const auto& arr = GlyphArrangementCache::getInstance()->getSingleLineText(context.getFont(), text, startX, baselineY);
+        
+        if (flags != Justification::left) {
+            auto w = arr.getBoundingBox(0, -1, true).getWidth();
+            
             if ((flags & (Justification::horizontallyCentred | Justification::horizontallyJustified)) != 0)
                 w /= 2.0f;
-
-            arr.draw (*this, AffineTransform::translation (-w, 0));
+            
+            arr.draw(*this, AffineTransform::translation(-w, 0));
         }
-        else
-        {
-            arr.draw (*this);
+        else {
+            arr.draw(*this);
         }
     }
 }
@@ -279,11 +276,8 @@ void Graphics::drawMultiLineText (const String& text, const int startX,
     if (text.isNotEmpty()
          && startX < context.getClipBounds().getRight())
     {
-        GlyphArrangement arr;
-        arr.addJustifiedText (context.getFont(), text,
-                              (float) startX, (float) baselineY, (float) maximumLineWidth,
-                              justification);
-        arr.draw (*this);
+        const auto& arr = GlyphArrangementCache::getInstance()->getMultiLineText(context.getFont(), text, startX, baselineY, maximumLineWidth, justification);
+        arr.draw(*this);
     }
 }
 
@@ -292,14 +286,8 @@ void Graphics::drawText (const String& text, Rectangle<float> area,
 {
     if (text.isNotEmpty() && context.clipRegionIntersects (area.getSmallestIntegerContainer()))
     {
-        GlyphArrangement arr;
-        arr.addCurtailedLineOfText (context.getFont(), text, 0.0f, 0.0f,
-                                    area.getWidth(), useEllipsesIfTooBig);
-
-        arr.justifyGlyphs (0, arr.getNumGlyphs(),
-                           area.getX(), area.getY(), area.getWidth(), area.getHeight(),
-                           justificationType);
-        arr.draw (*this);
+        const auto& arr = GlyphArrangementCache::getInstance()->getText(context.getFont(), text, area, justificationType, useEllipsesIfTooBig);
+        arr.draw(*this);
     }
 }
 
@@ -322,15 +310,8 @@ void Graphics::drawFittedText (const String& text, Rectangle<int> area,
 {
     if (text.isNotEmpty() && (! area.isEmpty()) && context.clipRegionIntersects (area))
     {
-        GlyphArrangement arr;
-        arr.addFittedText (context.getFont(), text,
-                           (float) area.getX(), (float) area.getY(),
-                           (float) area.getWidth(), (float) area.getHeight(),
-                           justification,
-                           maximumNumberOfLines,
-                           minimumHorizontalScale);
-
-        arr.draw (*this);
+        const auto& arr = GlyphArrangementCache::getInstance()->getFittedText(context.getFont(), text, area, justification, maximumNumberOfLines, minimumHorizontalScale);
+        arr.draw(*this);
     }
 }
 

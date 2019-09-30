@@ -108,6 +108,8 @@
  #define JUCE_USING_COREIMAGE_LOADER 0
 #endif
 
+#include "third_party/flat_hash_map.hpp"
+
 //==============================================================================
 #include "colour/juce_Colour.cpp"
 #include "colour/juce_ColourGradient.cpp"
@@ -119,7 +121,9 @@
 #include "geometry/juce_PathIterator.cpp"
 #include "geometry/juce_PathStrokeType.cpp"
 #include "placement/juce_RectanglePlacement.cpp"
+#include "fonts/GlyphArrangementCache.h"
 #include "contexts/juce_GraphicsContext.cpp"
+#include "fonts/GlyphArrangementCache.cpp"
 #include "contexts/juce_LowLevelGraphicsPostScriptRenderer.cpp"
 #include "contexts/juce_LowLevelGraphicsSoftwareRenderer.cpp"
 #include "images/juce_Image.cpp"
