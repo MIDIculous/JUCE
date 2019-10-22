@@ -16,7 +16,7 @@ const GlyphArrangement& GlyphArrangementCache::getSingleLineText(const Font& fon
                                                                  int startX,
                                                                  int baselineY)
 {
-    JUCE_ASSERT_MESSAGE_THREAD;
+    JUCE_ASSERT_MESSAGE_THREAD
 
     auto& cache = find(singleLineTexts, font, text);
 
@@ -41,7 +41,7 @@ const GlyphArrangement& GlyphArrangementCache::getMultiLineText(const Font& font
                                                                 int maximumLineWidth,
                                                                 Justification justification)
 {
-    JUCE_ASSERT_MESSAGE_THREAD;
+    JUCE_ASSERT_MESSAGE_THREAD
 
     auto& cache = find(multiLineTexts, font, text);
     const MultiLineTextKey key{ StartXAndBaselineY{ startX, baselineY }, maximumLineWidth, justification };
@@ -64,7 +64,7 @@ const GlyphArrangement& GlyphArrangementCache::getText(const Font& font,
                                                        Justification justificationType,
                                                        bool useEllipsesIfTooBig)
 {
-    JUCE_ASSERT_MESSAGE_THREAD;
+    JUCE_ASSERT_MESSAGE_THREAD
 
     auto& cache = find(texts, font, text);
     const TextKey key{ RectangleAndJustification<float>{ area, justificationType }, useEllipsesIfTooBig };
@@ -89,7 +89,7 @@ const GlyphArrangement& GlyphArrangementCache::getFittedText(const Font& font,
                                                              int maximumNumberOfLines,
                                                              float minimumHorizontalScale)
 {
-    JUCE_ASSERT_MESSAGE_THREAD;
+    JUCE_ASSERT_MESSAGE_THREAD
 
     auto& cache = find(fittedTexts, font, text);
     const FittedTextKey key{ RectangleAndJustification<int>{ area, justification }, maximumNumberOfLines, minimumHorizontalScale };
@@ -108,7 +108,7 @@ const GlyphArrangement& GlyphArrangementCache::getFittedText(const Font& font,
 
 void GlyphArrangementCache::clear()
 {
-    JUCE_ASSERT_MESSAGE_THREAD;
+    JUCE_ASSERT_MESSAGE_THREAD
 
     singleLineTexts.clear();
     multiLineTexts.clear();
