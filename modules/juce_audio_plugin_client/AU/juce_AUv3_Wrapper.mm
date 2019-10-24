@@ -1771,6 +1771,14 @@ public:
                     preferredSize = editor->getBounds();
 
                     JUCE_IOS_MAC_VIEW* view = [[[JUCE_IOS_MAC_VIEW alloc] initWithFrame: convertToCGRect (editor->getBounds())] autorelease];
+                    
+                    // Create a CALayer for backing content with async drawing. This fixes performance issues on Retina displays with wide color spaces (like Display P3 on the iMac Pro 5K Display). It speeds up drawing on other displays as well.
+                    // Taken from https://www.1014.org/index.php?article=802 and https://github.com/aseprite/laf/commit/cf962bffcc9773fa584b2fa7df04ef411a4e17b7
+                    view.wantsLayer = YES;
+                    jassert(view.wantsLayer);
+                    view.layer.drawsAsynchronously = YES;
+                    jassert(view.layer.drawsAsynchronously);
+                    
                     [myself setView: view];
 
                    #if JUCE_IOS
