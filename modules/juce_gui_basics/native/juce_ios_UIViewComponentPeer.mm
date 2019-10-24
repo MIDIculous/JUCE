@@ -438,6 +438,14 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
                     withFrame: (CGRect) frame
 {
     [super initWithFrame: frame];
+    
+    // Create a CALayer for backing content with async drawing. This fixes performance issues on Retina displays with wide color spaces (like Display P3 on the iMac Pro 5K Display). It speeds up drawing on other displays as well.
+    // Taken from https://www.1014.org/index.php?article=802 and https://github.com/aseprite/laf/commit/cf962bffcc9773fa584b2fa7df04ef411a4e17b7
+    jassert(self.layer);
+    jassert([self.layer isKindOfClass: CALayer.class]);
+    self.layer.drawsAsynchronously = YES;
+    jassert(self.layer.drawsAsynchronously);
+    
     owner = peer;
 
     hiddenTextView = [[UITextView alloc] initWithFrame: CGRectZero];
