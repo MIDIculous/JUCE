@@ -40,7 +40,7 @@ struct LogoComponent  : public Component
     LogoComponent()
     {
         if (auto svg = parseXML (BinaryData::background_logo_svg))
-            logo.reset (Drawable::createFromSVG (*svg));
+            logo = Drawable::createFromSVG (*svg);
         else
             jassertfalse;
     }
@@ -255,7 +255,7 @@ void ProjectContentComponent::rebuildProjectTabs()
         addAndMakeVisible (sidebarTabs);
         createProjectTabs();
 
-        //======================================================================
+        //==============================================================================
         auto& settings = project->getStoredProperties();
 
         auto lastTreeWidth = settings.getValue ("projectPanelWidth").getIntValue();
@@ -271,7 +271,7 @@ void ProjectContentComponent::rebuildProjectTabs()
             projectTab->setPanelHeightProportion (i, settings.getValue ("projectTabPanelHeight" + String (i), "1")
                                                              .getFloatValue());
 
-        //======================================================================
+        //==============================================================================
         resizerBar.reset (new ResizableEdgeComponent (&sidebarTabs, &sidebarSizeConstrainer,
                                                       ResizableEdgeComponent::rightEdge));
         addAndMakeVisible (resizerBar.get());
@@ -315,9 +315,7 @@ void ProjectContentComponent::reloadLastOpenDocuments()
 {
     if (project != nullptr)
     {
-        std::unique_ptr<XmlElement> xml (project->getStoredProperties().getXmlValue ("lastDocs"));
-
-        if (xml != nullptr)
+        if (auto xml = project->getStoredProperties().getXmlValue ("lastDocs"))
         {
             recentDocumentList.restoreFromXML (*project, *xml);
             showDocument (recentDocumentList.getCurrentDocument(), true);
@@ -661,7 +659,7 @@ void ProjectContentComponent::openInSelectedIDE (bool saveFirst)
 
             for (Project::ExporterIterator exporter (*project); exporter.next();)
             {
-                if (exporter->canLaunchProject() && exporter->getName() == selectedIDE)
+                if (exporter->canLaunchProject() && exporter->getName().contains (selectedIDE))
                 {
                     auto tempProject = project->isTemporaryProject(); // store this before saving as it will always be false after
 

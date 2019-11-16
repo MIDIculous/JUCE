@@ -95,11 +95,11 @@ struct InAppPurchases::Pimpl   : public SKDelegateAndPaymentObserver
     struct DownloadImpl  : public Download
     {
         DownloadImpl (SKDownload* downloadToUse)
-        : download (downloadToUse)
+            : download (downloadToUse)
         {
             [download retain];
         }
-        
+
         ~DownloadImpl()
         {
             [download release];

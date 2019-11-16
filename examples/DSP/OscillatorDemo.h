@@ -33,7 +33,7 @@
                    juce_audio_processors, juce_audio_utils, juce_core,
                    juce_data_structures, juce_dsp, juce_events, juce_graphics,
                    juce_gui_basics, juce_gui_extra
- exporters:        xcode_mac, vs2017, linux_make
+ exporters:        xcode_mac, vs2019, linux_make
 
  moduleFlags:      JUCE_STRICT_REFCOUNTEDPOINTER=1
 
@@ -73,11 +73,11 @@ struct OscillatorDemoDSP
 
     void process (const ProcessContextReplacing<float>& context)
     {
-        tempBuffer.copy (context.getInputBlock());
-        tempBuffer.multiply (static_cast<float> (fileMix));
+        tempBuffer.copyFrom (context.getInputBlock());
+        tempBuffer.multiplyBy (static_cast<float> (fileMix));
 
         oscillators[currentOscillatorIdx].process (context);
-        context.getOutputBlock().multiply (static_cast<float> (1.0 - fileMix));
+        context.getOutputBlock().multiplyBy (static_cast<float> (1.0 - fileMix));
 
         context.getOutputBlock().add (tempBuffer);
 

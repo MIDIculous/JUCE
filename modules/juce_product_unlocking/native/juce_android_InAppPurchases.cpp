@@ -340,7 +340,7 @@ struct InAppPurchases::Pimpl    : private AsyncUpdater,
                                    const Callback& callbackToUse)
             : ThreadPoolJob ("GetProductsInformationJob"),
               owner (parent),
-              packageName (LocalRef<jobject> (packageNameToUse.get())),
+              packageName (LocalRef<jobject> (getEnv()->NewLocalRef (packageNameToUse.get()))),
               productIdentifiers (productIdentifiersToUse),
               callback (callbackToUse)
         {}
@@ -516,7 +516,7 @@ struct InAppPurchases::Pimpl    : private AsyncUpdater,
                               const Callback& callbackToUse)
             : ThreadPoolJob ("GetProductsBoughtJob"),
               owner (parent),
-              packageName (LocalRef<jobject> (packageNameToUse.get())),
+              packageName (LocalRef<jobject> (getEnv()->NewLocalRef (packageNameToUse.get()))),
               callback (callbackToUse)
         {}
 
@@ -638,7 +638,7 @@ struct InAppPurchases::Pimpl    : private AsyncUpdater,
                             const Callback& callbackToUse)
             : ThreadPoolJob ("ConsumePurchaseJob"),
               owner (parent),
-              packageName (LocalRef<jobject> (packageNameToUse.get())),
+              packageName (LocalRef<jobject> (getEnv()->NewLocalRef (packageNameToUse.get()))),
               productIdentifier (productIdentifierToUse),
               purchaseToken (purchaseTokenToUse),
               callback (callbackToUse)

@@ -41,7 +41,7 @@ struct Detector   : public ReferenceCountedObject,
         startTimer (10);
     }
 
-    ~Detector()
+    ~Detector() override
     {
         jassert (activeTopologySources.isEmpty());
     }
@@ -90,6 +90,16 @@ struct Detector   : public ReferenceCountedObject,
         for (auto&& b : currentTopology.blocks)
             if (b->uid == deviceID)
                 return true;
+
+        return false;
+    }
+
+    bool isConnectedViaBluetooth (const Block& block) const noexcept
+    {
+        if (const auto connection = getDeviceConnectionFor (block))
+            if (const auto midiConnection = dynamic_cast<const MIDIDeviceConnection*> (connection))
+                if (midiConnection->midiInput != nullptr)
+                    return midiConnection->midiInput->getName().containsIgnoreCase ("bluetooth");
 
         return false;
     }
@@ -146,9 +156,9 @@ struct Detector   : public ReferenceCountedObject,
 
         if (blockIt != currentTopology.blocks.end())
         {
-            const auto block = *blockIt;
+            const Block::Ptr block { *blockIt };
 
-            if (auto blockImpl = BlockImpl::getFrom (block))
+            if (auto blockImpl = BlockImpl::getFrom (block.get()))
                 blockImpl->markDisconnected();
 
             currentTopology.blocks.removeObject (block);
@@ -167,27 +177,41 @@ struct Detector   : public ReferenceCountedObject,
         triggerAsyncUpdate();
     }
 
-    void handleDeviceUpdated (const DeviceInfo& info)
+    void handleDevicesUpdated (const Array<DeviceInfo>& infos)
     {
-        if (containsBlockWithUID (blocksToRemove, info.uid))
-            return;
+        bool shouldTriggerUpdate { false };
 
-        const auto blockIt = std::find_if (currentTopology.blocks.begin(), currentTopology.blocks.end(),
-                                           [uid = info.uid] (Block::Ptr block) { return uid == block->uid; });
-
-        if (blockIt != currentTopology.blocks.end())
+        for (auto& info : infos)
         {
-            const auto block = *blockIt;
+            if (containsBlockWithUID (blocksToRemove, info.uid))
+                continue;
 
-            if (auto blockImpl = BlockImpl::getFrom (block))
-                blockImpl->markReconnected (info);
+            const auto blockIt = std::find_if (currentTopology.blocks.begin(), currentTopology.blocks.end(),
+                                               [uid = info.uid] (Block::Ptr block) { return uid == block->uid; });
 
-            if (! containsBlockWithUID (blocksToAdd, info.uid))
+
+            if (blockIt != currentTopology.blocks.end())
             {
-                blocksToUpdate.addIfNotAlreadyThere (block);
-                triggerAsyncUpdate();
+                const Block::Ptr block { *blockIt };
+
+                if (auto blockImpl = BlockImpl::getFrom (block.get()))
+                    blockImpl->updateDeviceInfo (info);
+
+                if (! containsBlockWithUID (blocksToAdd, info.uid))
+                {
+                    blocksToUpdate.addIfNotAlreadyThere (block);
+                    shouldTriggerUpdate = true;
+                }
             }
         }
+
+        if (shouldTriggerUpdate)
+            triggerAsyncUpdate();
+    }
+
+    void handleDeviceUpdated (const DeviceInfo& info)
+    {
+        handleDevicesUpdated ({ info });
     }
 
     void handleBatteryChargingChanged (Block::UID deviceID, const BlocksProtocol::BatteryCharging isCharging)
@@ -458,7 +482,7 @@ private:
         if (auto block = currentTopology.getBlockWithUID (deviceID))
             return BlockImpl::getFrom (*block);
 
-            return nullptr;
+        return nullptr;
     }
 
     OwnedArray<ConnectedDeviceGroup<Detector>> connectedDeviceGroups;

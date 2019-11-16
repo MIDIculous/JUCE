@@ -39,12 +39,13 @@ const GlyphArrangement& GlyphArrangementCache::getMultiLineText(const Font& font
                                                                 int startX,
                                                                 int baselineY,
                                                                 int maximumLineWidth,
-                                                                Justification justification)
+                                                                Justification justification,
+                                                                float leading)
 {
     JUCE_ASSERT_MESSAGE_THREAD
 
     auto& cache = find(multiLineTexts, font, text);
-    const MultiLineTextKey key{ StartXAndBaselineY{ startX, baselineY }, maximumLineWidth, justification };
+    const MultiLineTextKey key{ StartXAndBaselineY{ startX, baselineY }, maximumLineWidth, justification, leading };
     auto it = cache.find(key);
     if (it == cache.end()) {
         GlyphArrangement arr;

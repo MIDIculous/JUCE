@@ -21,7 +21,8 @@ public:
                                              int startX,
                                              int baselineY,
                                              int maximumLineWidth,
-                                             Justification justification);
+                                             Justification justification,
+                                             float leading);
 
     const GlyphArrangement& getText(const Font& font,
                                     const String& text,
@@ -42,7 +43,7 @@ public:
 
 private:
     static constexpr int timerIntervalMilliseconds = 5000;
-    
+
     template<typename K, typename V, typename H = std::hash<K>>
     using unordered_map = ska::flat_hash_map<K, V, H>;
 
@@ -92,19 +93,22 @@ private:
         StartXAndBaselineY startXAndBaselineY;
         int maximumLineWidth{ 0 };
         Justification justification{ 0 };
+        float leading{ 0.f };
 
         forcedinline bool operator==(const MultiLineTextKey& other) const noexcept
         {
             return (startXAndBaselineY == other.startXAndBaselineY
                     && maximumLineWidth == other.maximumLineWidth
-                    && justification == other.justification);
+                    && justification == other.justification
+                    && leading == other.leading);
         }
 
         forcedinline size_t hash() const noexcept
         {
             return hash_combine(startXAndBaselineY.hash(),
                                 hash_combine(std::hash<int>()(maximumLineWidth),
-                                             std::hash<int>()(justification.getFlags())));
+                                             hash_combine(std::hash<int>()(justification.getFlags()),
+                                                          std::hash<float>()(leading))));
         }
     };
 
@@ -180,7 +184,7 @@ private:
     Cache<FittedTextKey> fittedTexts;
 
     GlyphArrangementCache() = default;
-    
+
     void timerCallback() override;
 
     template<typename KeyType>
@@ -202,7 +206,7 @@ private:
     {
         size_t cacheSize = 0;
         for (const auto& p1 : cache) {
-            for(const auto& p2 : p1.second)
+            for (const auto& p2 : p1.second)
                 cacheSize += p2.second.size();
         }
 

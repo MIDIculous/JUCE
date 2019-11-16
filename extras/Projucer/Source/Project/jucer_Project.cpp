@@ -234,6 +234,9 @@ void Project::initialiseProjectValues()
     binaryDataNamespaceValue.referTo (projectRoot, Ids::binaryDataNamespace, getUndoManager(), "BinaryData");
 
     compilerFlagSchemesValue.referTo (projectRoot, Ids::compilerFlagSchemes, getUndoManager(), Array<var>(), ",");
+
+    postExportShellCommandPosixValue.referTo (projectRoot, Ids::postExportShellCommandPosix, getUndoManager());
+    postExportShellCommandWinValue.referTo   (projectRoot, Ids::postExportShellCommandWin,   getUndoManager());
 }
 
 void Project::initialiseAudioPluginValues()
@@ -322,9 +325,13 @@ void Project::removeDefunctExporters()
 
         if (oldExporter.isValid())
         {
-            AlertWindow::showMessageBox (AlertWindow::WarningIcon,
-                                         TRANS (oldExporters[key]),
-                                         TRANS ("The " + oldExporters[key]  + " Exporter is deprecated. The exporter will be removed from this project."));
+            if (ProjucerApplication::getApp().isRunningCommandLine)
+                std::cout <<  "WARNING! The " + oldExporters[key]  + " Exporter is deprecated. The exporter will be removed from this project." << std::endl;
+            else
+                AlertWindow::showMessageBox (AlertWindow::WarningIcon,
+                                             TRANS (oldExporters[key]),
+                                             TRANS ("The " + oldExporters[key]  + " Exporter is deprecated. The exporter will be removed from this project."));
+
             exporters.removeChild (oldExporter, nullptr);
         }
     }
@@ -560,9 +567,9 @@ static void forgetRecentFile (const File& file)
 //==============================================================================
 Result Project::loadDocument (const File& file)
 {
-    auto xml = parseXML (file);
+    auto xml = parseXMLIfTagMatches (file, Ids::JUCERPROJECT.toString());
 
-    if (xml == nullptr || ! xml->hasTagName (Ids::JUCERPROJECT.toString()))
+    if (xml == nullptr)
         return Result::fail ("Not a valid Jucer project!");
 
     auto newTree = ValueTree::fromXml (*xml);
@@ -682,18 +689,15 @@ void Project::moveTemporaryDirectory (const File& newParentDirectory)
 
 bool Project::saveProjectRootToFile()
 {
-    std::unique_ptr<XmlElement> xml (projectRoot.createXml());
-
-    if (xml == nullptr)
+    if (auto xml = projectRoot.createXml())
     {
-        jassertfalse;
-        return false;
+        MemoryOutputStream mo;
+        xml->writeTo (mo, {});
+        return FileHelpers::overwriteFileWithNewDataIfDifferent (getFile(), mo);
     }
 
-    MemoryOutputStream mo;
-    xml->writeToStream (mo, {});
-
-    return FileHelpers::overwriteFileWithNewDataIfDifferent (getFile(), mo);
+    jassertfalse;
+    return false;
 }
 
 //==============================================================================
@@ -753,7 +757,6 @@ void Project::valueTreePropertyChanged (ValueTree& tree, const Identifier& prope
 void Project::valueTreeChildAdded (ValueTree&, ValueTree&)          { changed(); }
 void Project::valueTreeChildRemoved (ValueTree&, ValueTree&, int)   { changed(); }
 void Project::valueTreeChildOrderChanged (ValueTree&, int, int)     { changed(); }
-void Project::valueTreeParentChanged (ValueTree&)                   {}
 
 //==============================================================================
 bool Project::hasProjectBeenModified()
@@ -1025,7 +1028,7 @@ void Project::createPropertyEditors (PropertyListBuilder& props)
                                              "Include BinaryData.h in the JuceHeader.h file");
 
     props.add (new TextPropertyComponent (binaryDataNamespaceValue, "BinaryData Namespace", 256, false),
-                                          "The namespace containing the binary assests.");
+                                          "The namespace containing the binary assets.");
 
     props.add (new ChoicePropertyComponent (cppStandardValue, "C++ Language Standard",
                                             { "C++11", "C++14", "C++17", "Use Latest" },
@@ -1038,6 +1041,14 @@ void Project::createPropertyEditors (PropertyListBuilder& props)
 
     props.addSearchPathProperty (headerSearchPathsValue, "Header Search Paths", "Global header search paths.");
 
+    props.add (new TextPropertyComponent (postExportShellCommandPosixValue, "Post-Export Shell Command (macOS, Linux)", 1024, false),
+               "A command that will be executed by the system shell after saving this project on macOS or Linux. "
+               "The string \"%%1%%\" will be substituted with the absolute path to the project root folder.");
+
+    props.add (new TextPropertyComponent (postExportShellCommandWinValue, "Post-Export Shell Command (Windows)", 1024, false),
+               "A command that will be executed by the system shell after saving this project on Windows. "
+               "The string \"%%1%%\" will be substituted with the absolute path to the project root folder.");
+
     props.add (new TextPropertyComponent (userNotesValue, "Notes", 32768, true),
                "Extra comments: This field is not used for code or project generation, it's just a space where you can express your thoughts.");
 }
@@ -1045,7 +1056,7 @@ void Project::createPropertyEditors (PropertyListBuilder& props)
 void Project::createAudioPluginPropertyEditors (PropertyListBuilder& props)
 {
     props.add (new MultiChoicePropertyComponent (pluginFormatsValue, "Plugin Formats",
-                                                 { "VST3", "AU", "AUv3", "RTAS", "AAX", "Standalone", "Unity", "Enable IAA", "VST (Legacy)" },
+                                                 { "VST3", "AU", "AUv3", "RTAS (deprecated)", "AAX", "Standalone", "Unity", "Enable IAA", "VST (Legacy)" },
                                                  { Ids::buildVST3.toString(), Ids::buildAU.toString(), Ids::buildAUv3.toString(),
                                                    Ids::buildRTAS.toString(), Ids::buildAAX.toString(), Ids::buildStandalone.toString(), Ids::buildUnity.toString(),
                                                    Ids::enableIAA.toString(), Ids::buildVST.toString() }),
@@ -1212,15 +1223,17 @@ Project::Item Project::Item::createCopy()         { Item i (*this); i.state = i.
 String Project::Item::getID() const               { return state [Ids::ID]; }
 void Project::Item::setID (const String& newID)   { state.setProperty (Ids::ID, newID, nullptr); }
 
-Drawable* Project::Item::loadAsImageFile() const
+std::unique_ptr<Drawable> Project::Item::loadAsImageFile() const
 {
     const MessageManagerLock mml (ThreadPoolJob::getCurrentThreadPoolJob());
 
     if (! mml.lockWasGained())
         return nullptr;
 
-    return isValid() ? Drawable::createFromImageFile (getFile())
-                     : nullptr;
+    if (isValid())
+        return Drawable::createFromImageFile (getFile());
+
+    return {};
 }
 
 Project::Item Project::Item::createGroup (Project& project, const String& name, const String& uid, bool isModuleCode)
@@ -1274,6 +1287,14 @@ bool Project::Item::canContain (const Item& child) const
 }
 
 bool Project::Item::shouldBeAddedToTargetProject() const    { return isFile(); }
+
+bool Project::Item::shouldBeAddedToTargetExporter (const ProjectExporter& exporter) const
+{
+    if (shouldBeAddedToXcodeResources())
+        return exporter.isXcode() || shouldBeCompiled();
+
+    return true;
+}
 
 Value Project::Item::getShouldCompileValue()                { return state.getPropertyAsValue (Ids::compile, getUndoManager()); }
 bool Project::Item::shouldBeCompiled() const                { return state [Ids::compile]; }

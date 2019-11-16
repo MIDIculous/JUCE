@@ -37,7 +37,8 @@
  {
      DemoTaskbarComponent()
      {
-         setIconImage (getImageFromAssets ("juce_icon.png"));
+         setIconImage (getImageFromAssets ("juce_icon.png"),
+                       getImageFromAssets ("juce_icon_template.png"));
          setIconTooltip ("JUCE demo runner!");
      }
 
@@ -82,7 +83,7 @@ public:
     //==============================================================================
     DemoRunnerApplication() {}
 
-    ~DemoRunnerApplication()
+    ~DemoRunnerApplication() override
     {
         sharedAudioDeviceManager.reset();
     }
@@ -107,7 +108,7 @@ public:
         mainWindow.reset (new MainAppWindow (getApplicationName()));
     }
 
-    void backButtonPressed() override    { mainWindow->getMainComponent().getSidePanel().showOrHide (false); }
+    bool backButtonPressed() override    { mainWindow->getMainComponent().getSidePanel().showOrHide (false); return true; }
     void shutdown() override             { mainWindow = nullptr; }
 
     //==============================================================================
