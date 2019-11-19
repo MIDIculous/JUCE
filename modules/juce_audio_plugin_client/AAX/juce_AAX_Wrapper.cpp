@@ -482,14 +482,16 @@ namespace AAXClasses
                #endif
                 {
 #if JUCE_MAC
-                    jassert([(id)nativeViewToAttachTo isKindOfClass:NSView.class]);
-                    NSView* nsView = (NSView*)nativeViewToAttachTo;
                     // Create a CALayer for backing content with async drawing. This fixes performance issues on Retina displays with wide color spaces (like Display P3 on the iMac Pro 5K Display). It speeds up drawing on other displays as well.
                     // Taken from https://www.1014.org/index.php?article=802 and https://github.com/aseprite/laf/commit/cf962bffcc9773fa584b2fa7df04ef411a4e17b7
-                    nsView.wantsLayer = YES;
-                    jassert(nsView.wantsLayer);
-                    nsView.layer.drawsAsynchronously = YES;
-                    jassert(nsView.layer.drawsAsynchronously);
+                    if (component->isOpaque()) {
+                        jassert([(id)nativeViewToAttachTo isKindOfClass:NSView.class]);
+                        NSView* nsView = (NSView*)nativeViewToAttachTo;
+                        nsView.wantsLayer = YES;
+                        jassert(nsView.wantsLayer);
+                        nsView.layer.drawsAsynchronously = YES;
+                        jassert(nsView.layer.drawsAsynchronously);
+                    }
 #endif
                     
                     component->setVisible (true);
