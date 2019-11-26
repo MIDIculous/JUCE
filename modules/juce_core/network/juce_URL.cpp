@@ -57,6 +57,8 @@ struct FallbackDownloadTask  : public URL::DownloadTask,
     //==============================================================================
     void run() override
     {
+        String errorMessage;
+        
         while (! (stream->isExhausted() || stream->isError() || threadShouldExit()))
         {
             if (listener != nullptr)
@@ -66,13 +68,27 @@ struct FallbackDownloadTask  : public URL::DownloadTask,
                                                                          : static_cast<int64> (contentLength - downloaded));
 
             auto actual = stream->read (buffer.get(), max);
-
-            if (actual < 0 || threadShouldExit() || stream->isError())
+            
+            if (actual < 0) {
+                errorMessage = ("stream->read() returned < 0: " + String(actual) + ".");
                 break;
+            }
+            
+            if (threadShouldExit())
+                break;
+            
+            if (stream->isError()) {
+                errorMessage = "stream->isError() returned true.";
+                break;
+            }
 
             if (! fileStream->write (buffer.get(), static_cast<size_t> (actual)))
             {
                 error = true;
+                errorMessage = "fileStream->write() returned false.";
+                if (fileStream->getStatus().failed())
+                    errorMessage += (" fileStream->getStatus(): " + fileStream->getStatus().getErrorMessage());
+                
                 break;
             }
 
@@ -83,17 +99,24 @@ struct FallbackDownloadTask  : public URL::DownloadTask,
         }
 
         fileStream->flush();
+        
+        if (fileStream->getStatus().failed()) {
+            errorMessage += (" fileStream->getStatus(): " + fileStream->getStatus().getErrorMessage());
+            error = true;
+        }
 
         if (threadShouldExit() || stream->isError())
             error = true;
 
-        if (contentLength > 0 && downloaded < contentLength)
+        if (contentLength > 0 && downloaded < contentLength) {
+            errorMessage += ("Invalid downloaded length. contentLength=" + String(contentLength) + ", downloaded=" + String(downloaded));
             error = true;
+        }
 
         finished = true;
 
         if (listener != nullptr && ! threadShouldExit())
-            listener->finished (this, ! error, nullptr);
+            listener->finished (this, ! error, /* nsError: */ nullptr, errorMessage);
     }
 
     //==============================================================================

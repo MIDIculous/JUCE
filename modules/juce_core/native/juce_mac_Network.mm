@@ -870,7 +870,7 @@ public:
 
     void didFailWithError (NSError* error)
     {
-        DBG (nsStringToJuce ([error description])); ignoreUnused (error);
+        Logger::writeToLog (nsStringToJuce ([error description])); ignoreUnused (error);
         nsUrlErrorCode = [error code];
         hasFailed = true;
         initialised = true;
