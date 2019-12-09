@@ -41,6 +41,12 @@ public:
         FileChooserDelegateClass::setOwner (delegate.get(), this);
 
         auto utTypeArray = createNSArrayFromStringArray (getUTTypesForWildcards (owner.filters, firstFileExtension));
+        
+        if ((flags & FileBrowserComponent::canSelectDirectories) != 0) {
+            // A UIDocumentPickerViewController can only pick files OR directories, but not both at the same time.
+            jassert((flags & FileBrowserComponent::canSelectFiles) == 0);
+            utTypeArray = @[(__bridge NSString*)kUTTypeFolder];
+        }
 
         if ((flags & FileBrowserComponent::saveMode) != 0)
         {
