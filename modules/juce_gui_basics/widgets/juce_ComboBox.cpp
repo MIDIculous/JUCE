@@ -276,7 +276,7 @@ bool ComboBox::selectIfEnabled (const int index)
     {
         if (item->isEnabled)
         {
-            setSelectedItemIndex (index);
+            setSelectedItemIndex (index, sendNotificationSync);
             return true;
         }
     }
@@ -296,7 +296,7 @@ bool ComboBox::nudgeSelectedItem (int delta)
 void ComboBox::valueChanged (Value&)
 {
     if (lastCurrentId != (int) currentId.getValue())
-        setSelectedId (currentId.getValue());
+        setSelectedId (currentId.getValue(), sendNotificationSync);
 }
 
 //==============================================================================
@@ -509,7 +509,7 @@ static void comboBoxPopupMenuFinishedCallback (int result, ComboBox* combo)
         combo->hidePopup();
 
         if (result != 0)
-            combo->setSelectedId (result);
+            combo->setSelectedId (result, sendNotificationSync);
     }
 }
 
