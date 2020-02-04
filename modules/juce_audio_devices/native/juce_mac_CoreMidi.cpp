@@ -228,7 +228,7 @@ namespace CoreMidiHelpers
                 // From the Xcode 11 release notes known issues:
                 // Attempting to create an MIDINetworkSession in a simulated device running
                 // iOS 13 won’t succeed. (54484923)
-                jassertfalse;
+                // jassertfalse;
             }
             else
             {
