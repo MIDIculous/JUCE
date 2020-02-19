@@ -194,7 +194,7 @@ namespace juce {
 #endif
 
 #if JUCE_IOS_AUDIO_LOGGING
- #define JUCE_IOS_AUDIO_LOG(x)  DBG(x)
+ #define JUCE_IOS_AUDIO_LOG(x)  JUCE_BLOCK_WITH_FORCED_SEMICOLON (juce::String tempDbgBuf; tempDbgBuf << x; juce::Logger::outputDebugString (tempDbgBuf);)
 #else
  #define JUCE_IOS_AUDIO_LOG(x)
 #endif
