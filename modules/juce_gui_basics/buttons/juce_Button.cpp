@@ -144,7 +144,7 @@ void Button::setConnectedEdges (int newFlags)
 //==============================================================================
 void Button::setToggleState (bool shouldBeOn, NotificationType notification)
 {
-    setToggleState (shouldBeOn, notification, notification);
+    setToggleState (shouldBeOn, /* clickNotification: */ dontSendNotification, notification);
 }
 
 void Button::setToggleState (bool shouldBeOn, NotificationType clickNotification, NotificationType stateNotification)
