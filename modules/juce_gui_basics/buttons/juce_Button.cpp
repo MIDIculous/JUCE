@@ -179,7 +179,7 @@ void Button::setToggleState (bool shouldBeOn, NotificationType clickNotification
             // async callbacks aren't possible here
             jassert (clickNotification != sendNotificationAsync);
 
-            sendClickMessage (ModifierKeys::currentModifiers);
+            sendClickMessage (ModifierKeys::currentModifiers, nullptr);
 
             if (deletionWatcher == nullptr)
                 return;
@@ -335,7 +335,7 @@ void Button::triggerClick()
     postCommandMessage (clickMessageId);
 }
 
-void Button::internalClickCallback (const ModifierKeys& modifiers)
+void Button::internalClickCallback (const ModifierKeys& modifiers, const MouseEvent* e)
 {
     if (clickTogglesState)
     {
@@ -348,7 +348,7 @@ void Button::internalClickCallback (const ModifierKeys& modifiers)
         }
     }
 
-    sendClickMessage (modifiers);
+    sendClickMessage (modifiers, e);
 }
 
 void Button::flashButtonState()
@@ -368,7 +368,7 @@ void Button::handleCommandMessage (int commandId)
         if (isEnabled())
         {
             flashButtonState();
-            internalClickCallback (ModifierKeys::currentModifiers);
+            internalClickCallback (ModifierKeys::currentModifiers, nullptr);
         }
     }
     else
@@ -381,7 +381,7 @@ void Button::handleCommandMessage (int commandId)
 void Button::addListener (Listener* l)      { buttonListeners.add (l); }
 void Button::removeListener (Listener* l)   { buttonListeners.remove (l); }
 
-void Button::sendClickMessage (const ModifierKeys& modifiers)
+void Button::sendClickMessage (const ModifierKeys& modifiers, const MouseEvent* e)
 {
     Component::BailOutChecker checker (this);
 
@@ -399,7 +399,7 @@ void Button::sendClickMessage (const ModifierKeys& modifiers)
     if (checker.shouldBailOut())
         return;
 
-    buttonListeners.callChecked (checker, [this] (Listener& l) { l.buttonClicked (this); });
+    buttonListeners.callChecked (checker, [this, e] (Listener& l) { l.buttonClicked (this, e); });
 
     if (checker.shouldBailOut())
         return;
@@ -453,7 +453,7 @@ void Button::mouseDown (const MouseEvent& e)
             callbackHelper->startTimer (autoRepeatDelay);
 
         if (triggerOnMouseDown)
-            internalClickCallback (e.mods);
+            internalClickCallback (e.mods, &e);
     }
 }
 
@@ -468,7 +468,7 @@ void Button::mouseUp (const MouseEvent& e)
         if (lastStatePainted != buttonDown)
             flashButtonState();
 
-        internalClickCallback (e.mods);
+        internalClickCallback (e.mods, &e);
     }
 }
 
@@ -624,7 +624,7 @@ bool Button::keyStateChangedCallback()
 
     if (isEnabled() && wasDown && ! isKeyDown)
     {
-        internalClickCallback (ModifierKeys::currentModifiers);
+        internalClickCallback (ModifierKeys::currentModifiers, nullptr);
 
         // (return immediately - this button may now have been deleted)
         return true;
@@ -685,7 +685,7 @@ void Button::repeatTimerCallback()
         lastRepeatTime = now;
         callbackHelper->startTimer (repeatSpeed);
 
-        internalClickCallback (ModifierKeys::currentModifiers);
+        internalClickCallback (ModifierKeys::currentModifiers, nullptr);
     }
     else if (! needsToRelease)
     {

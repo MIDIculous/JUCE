@@ -171,7 +171,7 @@ public:
         virtual ~Listener() = default;
 
         /** Called when the button is clicked. */
-        virtual void buttonClicked (Button*) = 0;
+        virtual void buttonClicked (Button*, const MouseEvent*) = 0;
 
         /** Called when the button's state changes. */
         virtual void buttonStateChanged (Button*)  {}
@@ -442,7 +442,7 @@ protected:
 
     //==============================================================================
     /** @internal */
-    virtual void internalClickCallback (const ModifierKeys&);
+    virtual void internalClickCallback (const ModifierKeys&, const MouseEvent*);
     /** @internal */
     void handleCommandMessage (int commandId) override;
     /** @internal */
@@ -508,7 +508,7 @@ private:
     void turnOffOtherButtonsInGroup (NotificationType click, NotificationType state);
 
     void flashButtonState();
-    void sendClickMessage (const ModifierKeys&);
+    void sendClickMessage (const ModifierKeys&, const MouseEvent*);
     void sendStateMessage();
     void setToggleState (bool shouldBeOn, NotificationType click, NotificationType state);
 

@@ -727,7 +727,7 @@ struct AudioProcessorValueTreeState::ButtonAttachment::Pimpl  : private Attached
         }
     }
 
-    void buttonClicked (Button* b) override
+    void buttonClicked (Button* b, const MouseEvent*) override
     {
         const ScopedLock selfCallbackLock (selfCallbackMutex);
 

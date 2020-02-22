@@ -32,7 +32,7 @@ class DocumentWindow::ButtonListenerProxy  : public Button::Listener
 public:
     ButtonListenerProxy (DocumentWindow& w) : owner (w) {}
 
-    void buttonClicked (Button* button) override
+    void buttonClicked (Button* button, const MouseEvent*) override
     {
         if      (button == owner.getMinimiseButton())  owner.minimiseButtonPressed();
         else if (button == owner.getMaximiseButton())  owner.maximiseButtonPressed();
