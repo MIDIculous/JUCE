@@ -343,7 +343,7 @@ void Button::internalClickCallback (const ModifierKeys& modifiers, const MouseEv
 
         if (shouldBeOn != getToggleState())
         {
-            setToggleState (shouldBeOn, sendNotification);
+            setToggleState (shouldBeOn, /* clickNotification: */ sendNotification, sendNotification);
             return;
         }
     }
