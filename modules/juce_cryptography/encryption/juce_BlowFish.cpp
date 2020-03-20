@@ -293,8 +293,8 @@ void BlowFish::decrypt (MemoryBlock& data) const
 
     if (newSize >= 0)
         data.setSize (static_cast<size_t> (newSize));
-    else
-        jassertfalse;
+//    else
+//        jassertfalse;
 }
 
 int BlowFish::encrypt (void* data, size_t size, size_t bufferSize) const noexcept
