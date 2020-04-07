@@ -848,13 +848,18 @@ private:
                                  const AudioTimeStamp* /*inOutputTime*/,
                                  void* device)
     {
-        static_cast<CoreAudioInternal*> (device)->audioCallback (inInputData, outOutputData);
+        if (device)
+            static_cast<CoreAudioInternal*> (device)->audioCallback (inInputData, outOutputData);
+        
         return noErr;
     }
 
     static OSStatus deviceListenerProc (AudioDeviceID /*inDevice*/, UInt32 /*inLine*/,
                                         const AudioObjectPropertyAddress* pa, void* inClientData)
     {
+        if (!inClientData)
+            return noErr;
+        
         auto intern = static_cast<CoreAudioInternal*> (inClientData);
 
         switch (pa->mSelector)
