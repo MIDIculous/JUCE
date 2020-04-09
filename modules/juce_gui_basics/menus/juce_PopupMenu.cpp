@@ -29,7 +29,7 @@ namespace juce
 
 namespace PopupMenuSettings
 {
-    const int scrollZone = 24;
+    const int scrollZone = 48;
     const int dismissCommandId = 0x6287345f;
 
     static bool menuWasHiddenBecauseOfAppChange = false;
