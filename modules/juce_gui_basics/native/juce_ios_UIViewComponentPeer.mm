@@ -139,6 +139,7 @@ using namespace juce;
 - (void) viewWillTransitionToSize: (CGSize) size withTransitionCoordinator: (id<UIViewControllerTransitionCoordinator>) coordinator;
 - (BOOL) prefersStatusBarHidden;
 - (UIStatusBarStyle) preferredStatusBarStyle;
+- (UIRectEdge)preferredScreenEdgesDeferringSystemGestures;
 
 - (void) viewDidLoad;
 - (void) viewWillAppear: (BOOL) animated;
@@ -402,6 +403,14 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
 - (UIStatusBarStyle) preferredStatusBarStyle
 {
     return UIStatusBarStyleDefault;
+}
+
+- (UIRectEdge)preferredScreenEdgesDeferringSystemGestures
+{
+    if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPhone)
+        return UIRectEdgeAll;
+    
+    return [super preferredScreenEdgesDeferringSystemGestures];
 }
 
 - (void) viewDidLoad
