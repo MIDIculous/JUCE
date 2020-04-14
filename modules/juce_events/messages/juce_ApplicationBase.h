@@ -204,6 +204,13 @@ public:
         At the moment this method is only called on iOS.
     */
     virtual void memoryWarningReceived()     { jassertfalse; }
+    
+#if JUCE_IOS
+    /**
+     Called when the app should open the given URL. This is used when the app has registered a custom URL scheme.
+    */
+    virtual bool iOSOpenURL(void* url, void* options) { ignoreUnused(url, options); return false; }
+#endif
 
     //==============================================================================
     /** This will be called when the back button on a device is pressed. The return value

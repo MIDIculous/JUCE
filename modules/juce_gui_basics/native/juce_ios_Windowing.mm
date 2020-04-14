@@ -59,6 +59,9 @@ namespace juce
 - (void) application: (UIApplication*) application handleEventsForBackgroundURLSession: (NSString*) identifier
    completionHandler: (void (^)(void)) completionHandler;
 - (void) applicationDidReceiveMemoryWarning: (UIApplication *) application;
+- (BOOL) application:(UIApplication *)app
+            openURL:(NSURL *)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id> *)options;
 #if JUCE_PUSH_NOTIFICATIONS
 - (void) application: (UIApplication*) application didRegisterUserNotificationSettings: (UIUserNotificationSettings*) notificationSettings;
 - (void) application: (UIApplication*) application didRegisterForRemoteNotificationsWithDeviceToken: (NSData*) deviceToken;
@@ -187,6 +190,17 @@ namespace juce
 
     if (auto* app = JUCEApplicationBase::getInstance())
         app->memoryWarningReceived();
+}
+
+- (BOOL)application:(UIApplication *)app
+            openURL:(NSURL *)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id> *)options
+{
+    ignoreUnused (app);
+    if (auto* app = JUCEApplicationBase::getInstance())
+        return app->iOSOpenURL(url, options);
+    
+    return NO;
 }
 
 - (void) setPushNotificationsDelegateToUse: (NSObject*) delegate
