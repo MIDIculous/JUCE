@@ -551,7 +551,7 @@ public:
 
         @see removeListener
     */
-    void addListener (Listener* listener);
+    void addListener (Listener* listener, bool isHighPriority = false);
 
     /** Removes a listener that was previously added with addListener(). */
     void removeListener (Listener* listener);
@@ -619,6 +619,7 @@ private:
     friend class SharedObject;
 
     ReferenceCountedObjectPtr<SharedObject> object;
+    ListenerList<Listener> highPriorityListeners;
     ListenerList<Listener> listeners;
 
     template <typename ElementComparator>

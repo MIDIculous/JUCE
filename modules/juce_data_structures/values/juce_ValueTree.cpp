@@ -72,6 +72,7 @@ public:
 
         if (numListeners == 1)
         {
+            valueTreesWithListeners.getUnchecked (0)->highPriorityListeners.callExcluding (listenerToExclude, fn);
             valueTreesWithListeners.getUnchecked (0)->listeners.callExcluding (listenerToExclude, fn);
         }
         else if (numListeners > 0)
@@ -82,8 +83,33 @@ public:
             {
                 auto* v = listenersCopy.getUnchecked (i);
 
-                if (i == 0 || valueTreesWithListeners.contains (v))
+                if (i == 0 || valueTreesWithListeners.contains (v)) {
+                    v->highPriorityListeners.callExcluding (listenerToExclude, fn);
                     v->listeners.callExcluding (listenerToExclude, fn);
+                }
+            }
+        }
+    }
+
+    template <typename Function>
+    void callHighPriorityListeners (ValueTree::Listener* listenerToExclude, Function fn) const
+    {
+        auto numListeners = valueTreesWithListeners.size();
+
+        if (numListeners == 1)
+        {
+            valueTreesWithListeners.getUnchecked (0)->highPriorityListeners.callExcluding (listenerToExclude, fn);
+        }
+        else if (numListeners > 0)
+        {
+            auto listenersCopy = valueTreesWithListeners;
+
+            for (int i = 0; i < numListeners; ++i)
+            {
+                auto* v = listenersCopy.getUnchecked (i);
+
+                if (i == 0 || valueTreesWithListeners.contains (v))
+                    v->highPriorityListeners.callExcluding (listenerToExclude, fn);
             }
         }
     }
@@ -91,6 +117,9 @@ public:
     template <typename Function>
     void callListenersForAllParents (ValueTree::Listener* listenerToExclude, Function fn) const
     {
+        for (auto* t = this; t != nullptr; t = t->parent)
+            t->callHighPriorityListeners (listenerToExclude, fn);
+
         for (auto* t = this; t != nullptr; t = t->parent)
             t->callListeners (listenerToExclude, fn);
     }
@@ -127,6 +156,7 @@ public:
             if (auto* child = children.getObjectPointer (j))
                 child->sendParentChangeMessage();
 
+        callHighPriorityListeners (nullptr, [&] (Listener& l) { l.valueTreeParentChanged (tree); });
         callListeners (nullptr, [&] (Listener& l) { l.valueTreeParentChanged (tree); });
     }
 
@@ -609,7 +639,7 @@ ValueTree& ValueTree::operator= (const ValueTree& other)
 {
     if (object != other.object)
     {
-        if (listeners.isEmpty())
+        if (listeners.isEmpty() && highPriorityListeners.isEmpty())
         {
             object = other.object;
         }
@@ -623,6 +653,7 @@ ValueTree& ValueTree::operator= (const ValueTree& other)
 
             object = other.object;
 
+            highPriorityListeners.call ([this] (Listener& l) { l.valueTreeRedirected (*this); });
             listeners.call ([this] (Listener& l) { l.valueTreeRedirected (*this); });
         }
     }
@@ -639,7 +670,7 @@ ValueTree::ValueTree (ValueTree&& other) noexcept
 
 ValueTree::~ValueTree()
 {
-    if (! listeners.isEmpty() && object != nullptr)
+    if ((! listeners.isEmpty() || ! highPriorityListeners.isEmpty()) && object != nullptr)
         object->valueTreesWithListeners.removeValue (this);
 }
 
@@ -966,22 +997,26 @@ void ValueTree::reorderChildren (const OwnedArray<ValueTree>& newOrder, UndoMana
 }
 
 //==============================================================================
-void ValueTree::addListener (Listener* listener)
+void ValueTree::addListener (Listener* listener, bool isHighPriority)
 {
     if (listener != nullptr)
     {
-        if (listeners.isEmpty() && object != nullptr)
+        if (listeners.isEmpty() && highPriorityListeners.isEmpty() && object != nullptr)
             object->valueTreesWithListeners.add (this);
 
-        listeners.add (listener);
+        if (isHighPriority)
+            highPriorityListeners.add (listener);
+        else
+            listeners.add (listener);
     }
 }
 
 void ValueTree::removeListener (Listener* listener)
 {
+    highPriorityListeners.remove (listener);
     listeners.remove (listener);
 
-    if (listeners.isEmpty() && object != nullptr)
+    if (listeners.isEmpty() && highPriorityListeners.isEmpty() && object != nullptr)
         object->valueTreesWithListeners.removeValue (this);
 }
 
