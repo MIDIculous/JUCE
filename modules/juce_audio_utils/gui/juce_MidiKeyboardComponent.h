@@ -396,6 +396,12 @@ protected:
     /** Returns the rectangle for a given key if within the displayable range */
     Rectangle<float> getRectangleForKey (int midiNoteNumber) const;
 
+    /** Called when a key has been pressed or released through a click or key press.
+
+        This can be overridden to handle only key presses that come from the MidiKeyboardComponent itself, not from its MidiKeyboardState.
+    */
+    virtual void noteStateChangedFromGUI(int midiNoteNumber, bool isDown);
+
 
 private:
     //==============================================================================
