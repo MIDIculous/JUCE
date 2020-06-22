@@ -52,37 +52,35 @@ DeletedAtShutdown::~DeletedAtShutdown()
 
 void DeletedAtShutdown::deleteAll()
 {
-    // make a local copy of the array, so it can't get into a loop if something
-    // creates another DeletedAtShutdown object during its destructor.
-    Array<DeletedAtShutdown*> localCopy;
-
-    {
-        const SpinLock::ScopedLockType sl (deletedAtShutdownLock);
-        localCopy = getDeletedAtShutdownObjects();
-    }
-
-    for (int i = localCopy.size(); --i >= 0;)
-    {
-        JUCE_TRY
+    while (!getDeletedAtShutdownObjects().isEmpty()) {
+        // make a local copy of the array, so it can't get into a loop if something
+        // creates another DeletedAtShutdown object during its destructor.
+        Array<DeletedAtShutdown*> localCopy;
+        
         {
-            auto* deletee = localCopy.getUnchecked(i);
-
-            // double-check that it's not already been deleted during another object's destructor.
-            {
-                const SpinLock::ScopedLockType sl (deletedAtShutdownLock);
-
-                if (! getDeletedAtShutdownObjects().contains (deletee))
-                    deletee = nullptr;
-            }
-
-            delete deletee;
+            const SpinLock::ScopedLockType sl (deletedAtShutdownLock);
+            localCopy = getDeletedAtShutdownObjects();
         }
-        JUCE_CATCH_EXCEPTION
+        
+        for (int i = localCopy.size(); --i >= 0;)
+        {
+            JUCE_TRY
+            {
+                auto* deletee = localCopy.getUnchecked(i);
+                
+                // double-check that it's not already been deleted during another object's destructor.
+                {
+                    const SpinLock::ScopedLockType sl (deletedAtShutdownLock);
+                    
+                    if (! getDeletedAtShutdownObjects().contains (deletee))
+                        deletee = nullptr;
+                }
+                
+                delete deletee;
+            }
+            JUCE_CATCH_EXCEPTION
+        }
     }
-
-    // if this fails, then it's likely that some new DeletedAtShutdown objects were
-    // created while executing the destructors of the other ones.
-    jassert (getDeletedAtShutdownObjects().isEmpty());
 
     getDeletedAtShutdownObjects().clear(); // just to make sure the array doesn't have any memory still allocated
 }
