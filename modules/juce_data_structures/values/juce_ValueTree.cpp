@@ -72,7 +72,6 @@ public:
 
         if (numListeners == 1)
         {
-            valueTreesWithListeners.getUnchecked (0)->highPriorityListeners.callExcluding (listenerToExclude, fn);
             valueTreesWithListeners.getUnchecked (0)->listeners.callExcluding (listenerToExclude, fn);
         }
         else if (numListeners > 0)
@@ -83,10 +82,8 @@ public:
             {
                 auto* v = listenersCopy.getUnchecked (i);
 
-                if (i == 0 || valueTreesWithListeners.contains (v)) {
-                    v->highPriorityListeners.callExcluding (listenerToExclude, fn);
+                if (i == 0 || valueTreesWithListeners.contains (v))
                     v->listeners.callExcluding (listenerToExclude, fn);
-                }
             }
         }
     }
