@@ -184,8 +184,6 @@ private:
     //==============================================================================
     void addTimer (Timer* t)
     {
-        JUCE_ASSERT_MESSAGE_THREAD
-        
         // Trying to add a timer that's already here - shouldn't get to this point,
         // so if you get this assertion, let me know!
         jassert (std::find_if (timers.begin(), timers.end(),
@@ -201,8 +199,6 @@ private:
 
     void removeTimer (Timer* t)
     {
-        JUCE_ASSERT_MESSAGE_THREAD
-        
         auto pos = t->positionInQueue;
         auto lastIndex = timers.size() - 1;
 
@@ -220,8 +216,6 @@ private:
 
     void resetTimerCounter (Timer* t) noexcept
     {
-        JUCE_ASSERT_MESSAGE_THREAD
-        
         auto pos = t->positionInQueue;
 
         jassert (pos < timers.size());
@@ -245,8 +239,6 @@ private:
 
     void shuffleTimerBackInQueue (size_t pos)
     {
-        JUCE_ASSERT_MESSAGE_THREAD
-        
         auto numTimers = timers.size();
 
         if (pos < numTimers - 1)
@@ -273,8 +265,6 @@ private:
 
     void shuffleTimerForwardInQueue (size_t pos)
     {
-        JUCE_ASSERT_MESSAGE_THREAD
-        
         if (pos > 0)
         {
             auto t = timers[pos];
@@ -336,8 +326,6 @@ void Timer::startTimer (int interval) noexcept
     // running, then you're not going to get any timer callbacks!
     JUCE_ASSERT_MESSAGE_MANAGER_EXISTS
 
-    JUCE_ASSERT_MESSAGE_THREAD
-    
     const TimerThread::LockType::ScopedLockType sl (TimerThread::lock);
 
     bool wasStopped = (timerPeriodMs == 0);
@@ -359,8 +347,6 @@ void Timer::startTimerHz (int timerFrequencyHz) noexcept
 
 void Timer::stopTimer() noexcept
 {
-    JUCE_ASSERT_MESSAGE_THREAD
-    
     const TimerThread::LockType::ScopedLockType sl (TimerThread::lock);
 
     if (timerPeriodMs > 0)
