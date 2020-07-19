@@ -1,8 +1,3 @@
-/*
- Author: Martin Finke
- Date:   Sep 30, 2019 13:13
- */
-
 namespace juce {
 class GlyphArrangementCache final : private DeletedAtShutdown, private Timer
 {
