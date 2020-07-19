@@ -542,6 +542,9 @@ void ListBox::setSelectedRows (const SparseSet<int>& setOfRowsToBeSelected,
         lastRowSelected = getSelectedRow (0);
 
     viewport->updateContents();
+    
+    // Other notification types aren't supported
+    jassert(sendNotificationEventToModel == sendNotification || sendNotificationEventToModel == dontSendNotification);
 
     if (model != nullptr && sendNotificationEventToModel == sendNotification)
         model->selectedRowsChanged (lastRowSelected);
