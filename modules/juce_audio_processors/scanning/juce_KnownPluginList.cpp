@@ -382,7 +382,7 @@ void KnownPluginList::recreateFromXml (const XmlElement& xml)
             PluginDescription info;
 
             if (e->hasTagName ("BLACKLISTED"))
-                blacklist.add (e->getStringAttribute ("id"));
+                addToBlacklist (e->getStringAttribute ("id"));
             else if (info.loadFromXml (*e))
                 addType (info);
         }
