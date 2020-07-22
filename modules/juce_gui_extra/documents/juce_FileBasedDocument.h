@@ -220,6 +220,10 @@ public:
         @see getFile
     */
     void setFile (const File& newFile);
+    
+    /** Sets a Component that will be used as the associated Component when showing AlertWindows.
+    */
+    void setAssociatedComponent(Component* associatedComponent) { this->associatedComponent = associatedComponent; }
 
 
 protected:
@@ -289,6 +293,7 @@ private:
     File documentFile;
     bool changedSinceSave;
     String fileExtension, fileWildcard, openFileDialogTitle, saveFileDialogTitle;
+    WeakReference<Component> associatedComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FileBasedDocument)
 };

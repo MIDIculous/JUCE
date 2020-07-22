@@ -102,7 +102,9 @@ Result FileBasedDocument::loadFrom (const File& newFile, const bool showMessageO
                                           TRANS("There was an error while trying to load the file: FLNM")
                                               .replace ("FLNM", "\n" + newFile.getFullPathName())
                                             + "\n\n"
-                                            + result.getErrorMessage());
+                                            + result.getErrorMessage(),
+                                          String(),
+                                          associatedComponent);
 
     return result;
 }
@@ -120,7 +122,7 @@ Result FileBasedDocument::loadFromUserSpecifiedFile (const bool showMessageOnFai
     return Result::fail (TRANS("User cancelled"));
 }
 
-static bool askToOverwriteFile (const File& newFile)
+static bool askToOverwriteFile (const File& newFile, Component* associatedComponent)
 {
     return AlertWindow::showOkCancelBox (AlertWindow::WarningIcon,
                                             TRANS("File already exists"),
@@ -129,7 +131,8 @@ static bool askToOverwriteFile (const File& newFile)
                                              + "\n\n"
                                              + TRANS("Are you sure you want to overwrite it?"),
                                             TRANS("Overwrite"),
-                                            TRANS("Cancel"));
+                                            TRANS("Cancel"),
+                                            associatedComponent);
 }
 
 //==============================================================================
@@ -159,7 +162,7 @@ FileBasedDocument::SaveResult FileBasedDocument::saveAs (const File& newFile,
 
     if (warnAboutOverwritingExistingFiles
           && newFile.exists()
-          && ! askToOverwriteFile (newFile))
+          && ! askToOverwriteFile (newFile, associatedComponent))
         return userCancelledSave;
 
     MouseCursor::showWaitCursor();
@@ -188,7 +191,9 @@ FileBasedDocument::SaveResult FileBasedDocument::saveAs (const File& newFile,
                                             .replace ("DCNM", getDocumentTitle())
                                             .replace ("FLNM", "\n" + newFile.getFullPathName())
                                            + "\n\n"
-                                           + result.getErrorMessage());
+                                           + result.getErrorMessage(),
+                                          String(),
+                                          associatedComponent);
 
     sendChangeMessage(); // because the filename may have changed
     return failedToWriteToFile;
@@ -205,7 +210,8 @@ FileBasedDocument::SaveResult FileBasedDocument::saveIfNeededAndUserAgrees()
                                                     .replace ("DCNM", getDocumentTitle()),
                                                    TRANS("Save"),
                                                    TRANS("Discard changes"),
-                                                   TRANS("Cancel"));
+                                                   TRANS("Cancel"),
+                                                   associatedComponent);
 
     if (r == 1)  // save changes
         return save (true, true);
@@ -251,7 +257,7 @@ FileBasedDocument::SaveResult FileBasedDocument::saveAsInteractive (const bool w
         {
             chosen = chosen.withFileExtension (fileExtension);
 
-            if (chosen.exists() && ! askToOverwriteFile (chosen))
+            if (chosen.exists() && ! askToOverwriteFile (chosen, associatedComponent))
                 return userCancelledSave;
         }
 
