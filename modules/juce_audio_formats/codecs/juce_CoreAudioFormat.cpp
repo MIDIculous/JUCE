@@ -357,6 +357,18 @@ public:
                                                   nullptr,  // setSize needs to be null to avoid permisisions errors
                                                   0,        // AudioFileTypeID inFileTypeHint
                                                   &audioFileID);
+        
+        if (status != noErr) {
+            // Possible fix for some MP3 files not being read (https://forum.juce.com/t/coreaudioformat-doesnt-read-mp3-file-quicktime-player-does/18684/8)
+            status = AudioFileOpenWithCallbacks (this,
+                                                 &readCallback,
+                                                 nullptr,  // write needs to be null to avoid permisisions errors
+                                                 &getSizeCallback,
+                                                 nullptr,  // setSize needs to be null to avoid permisisions errors
+                                                 kAudioFileMP3Type,        // AudioFileTypeID inFileTypeHint
+                                                 &audioFileID);
+        }
+        
         if (status == noErr)
         {
             status = ExtAudioFileWrapAudioFileID (audioFileID, false, &audioFileRef);
