@@ -597,7 +597,7 @@ bool ResizableWindow::restoreWindowStateFromString (const String& s)
 //==============================================================================
 void ResizableWindow::mouseDown (const MouseEvent& e)
 {
-    if (canDrag && ! isFullScreen())
+    if (e.eventComponent == this && canDrag && ! isFullScreen())
     {
         dragStarted = true;
         dragger.startDraggingComponent (this, e);
@@ -606,13 +606,14 @@ void ResizableWindow::mouseDown (const MouseEvent& e)
 
 void ResizableWindow::mouseDrag (const MouseEvent& e)
 {
-    if (dragStarted)
+    if (e.eventComponent == this && dragStarted)
         dragger.dragComponent (this, e, constrainer);
 }
 
-void ResizableWindow::mouseUp (const MouseEvent&)
+void ResizableWindow::mouseUp (const MouseEvent& e)
 {
-    dragStarted = false;
+    if (e.eventComponent == this)
+        dragStarted = false;
 }
 
 //==============================================================================
