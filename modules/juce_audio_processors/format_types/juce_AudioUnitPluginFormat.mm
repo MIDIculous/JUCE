@@ -2627,26 +2627,37 @@ AudioUnitPluginFormat::~AudioUnitPluginFormat()
 void AudioUnitPluginFormat::findAllTypesForFile (OwnedArray<PluginDescription>& results,
                                                  const String& fileOrIdentifier)
 {
-    if (! fileMightContainThisPluginType (fileOrIdentifier))
+    logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + ")...");
+    
+    if (! fileMightContainThisPluginType (fileOrIdentifier)) {
+        logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + ") ERROR: fileMightContainThisPluginType returned false.");
         return;
+    }
 
     PluginDescription desc;
     desc.fileOrIdentifier = fileOrIdentifier;
     desc.uid = 0;
 
     if (MessageManager::getInstance()->isThisTheMessageThread()
-          && requiresUnblockedMessageThreadDuringCreation (desc))
+         && requiresUnblockedMessageThreadDuringCreation (desc)) {
+        logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + ") ERROR: Called on Message Thread, but plugin requires an unblocked message thread.");
         return;
+    }
 
     try
     {
+        logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + "): Calling createInstanceFromDescription()...");
         auto createdInstance = createInstanceFromDescription (desc, 44100.0, 512);
+        logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + "): createInstanceFromDescription() returned.");
 
         if (auto auInstance = dynamic_cast<AudioUnitPluginInstance*> (createdInstance.get()))
             results.add (new PluginDescription (auInstance->getPluginDescription()));
+        else
+            logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + ") ERROR: createInstanceFromDescription() did not return an AudioUnitPluginInstance.");
     }
-    catch (...)
+    catch (const std::exception& e)
     {
+        logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + ") ERROR: Exception thrown while calling createInstanceFromDescription(): " + e.what());
         // crashed while loading...
     }
 }
@@ -2659,6 +2670,8 @@ void AudioUnitPluginFormat::createPluginInstance (const PluginDescription& desc,
 
     if (fileMightContainThisPluginType (desc.fileOrIdentifier))
     {
+        logIfVerbose("AudioUnitPluginFormat::createPluginInstance: fileMightContainThisPluginType returned true.");
+        
         String pluginName, version, manufacturer;
         AudioComponentDescription componentDesc;
         AudioComponent auComponent;
@@ -2667,18 +2680,23 @@ void AudioUnitPluginFormat::createPluginInstance (const PluginDescription& desc,
         if ((! getComponentDescFromIdentifier (desc.fileOrIdentifier, componentDesc, pluginName, version, manufacturer))
               && (! getComponentDescFromFile (desc.fileOrIdentifier, componentDesc, pluginName, version, manufacturer)))
         {
+            logIfVerbose("AudioUnitPluginFormat::createPluginInstance ERROR: getComponentDescFromIdentifier or getComponentDescFromFile returned false.");
+            
             callback (nullptr, errMessage);
             return;
         }
 
         if ((auComponent = AudioComponentFindNext (nullptr, &componentDesc)) == nullptr)
         {
+            logIfVerbose("AudioUnitPluginFormat::createPluginInstance ERROR: AudioComponentFindNext returned nullptr.");
             callback (nullptr, errMessage);
             return;
         }
 
-        if (AudioComponentGetDescription (auComponent, &componentDesc) != noErr)
+        const auto result = AudioComponentGetDescription (auComponent, &componentDesc);
+        if (result != noErr)
         {
+            logIfVerbose("AudioUnitPluginFormat::createPluginInstance ERROR: AudioComponentGetDescription returned error code:" + String(result));
             callback (nullptr, errMessage);
             return;
         }
@@ -2709,13 +2727,18 @@ void AudioUnitPluginFormat::createPluginInstance (const PluginDescription& desc,
                 {
                     std::unique_ptr<AudioUnitPluginInstance> instance (new AudioUnitPluginInstance (audioUnit));
 
-                    if (instance->initialise (sampleRate, framesPerBuffer))
+                    if (instance->initialise (sampleRate, framesPerBuffer)) {
+                        logIfVerbose("AudioUnitPluginInstance::initialise returned true.");
                         originalCallback (std::move (instance), {});
-                    else
+                    }
+                    else {
+                        logIfVerbose("ERROR: AudioUnitPluginInstance::initialise returned false.");
                         originalCallback (nullptr, NEEDS_TRANS ("Unable to initialise the AudioUnit plug-in"));
+                    }
                 }
                 else
                 {
+                    logIfVerbose("ERROR: AU Initialization callback called with error code: " + String(err));
                     auto errMsg = TRANS ("An OS error occurred during initialisation of the plug-in (XXX)");
                     originalCallback (nullptr, errMsg.replace ("XXX", String (err)));
                 }
@@ -2753,6 +2776,7 @@ void AudioUnitPluginFormat::createPluginInstance (const PluginDescription& desc,
     }
     else
     {
+        logIfVerbose("AudioUnitPluginFormat::createPluginInstance: fileMightContainThisPluginType returned false.");
         callback (nullptr, NEEDS_TRANS ("Plug-in description is not an AudioUnit plug-in"));
     }
 }
@@ -2791,11 +2815,16 @@ StringArray AudioUnitPluginFormat::searchPathsForPlugins (const FileSearchPath&,
 
         comp = AudioComponentFindNext (comp, &desc);
 
-        if (comp == nullptr)
+        if (comp == nullptr) {
+            logIfVerbose("AudioComponentFindNext returned nullptr.");
             break;
+        }
 
-        if (AudioComponentGetDescription (comp, &desc) != noErr)
+        const auto descriptionResult = AudioComponentGetDescription (comp, &desc);
+        if (descriptionResult != noErr) {
+            logIfVerbose("ERROR: AudioComponentGetDescription returned error code:" + String(descriptionResult));
             continue;
+        }
 
         if (desc.componentType == kAudioUnitType_MusicDevice
              || desc.componentType == kAudioUnitType_MusicEffect

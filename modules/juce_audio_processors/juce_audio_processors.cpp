@@ -36,6 +36,12 @@
 #define JUCE_CORE_INCLUDE_NATIVE_HEADERS 1
 #define JUCE_CORE_INCLUDE_OBJC_HELPERS 1
 
+#if JUCE_PLUGINHOST_VERBOSE_LOGGING
+#define logIfVerbose(__s) JUCE_BLOCK_WITH_FORCED_SEMICOLON(Logger::writeToLog((__s));)
+#else
+#define logIfVerbose(__s)
+#endif
+
 #include "juce_audio_processors.h"
 #include <juce_gui_extra/juce_gui_extra.h>
 

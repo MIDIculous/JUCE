@@ -93,6 +93,14 @@
  #define JUCE_PLUGINHOST_LADSPA 0
 #endif
 
+/** Config: JUCE_PLUGINHOST_VERBOSE_LOGGING
+    
+    Enables verbose logging when scanning and hosting plugins.
+ */
+#ifndef JUCE_PLUGINHOST_VERBOSE_LOGGING
+ #define JUCE_PLUGINHOST_VERBOSE_LOGGING 0
+#endif
+
 #if ! (JUCE_PLUGINHOST_AU || JUCE_PLUGINHOST_VST || JUCE_PLUGINHOST_VST3 || JUCE_PLUGINHOST_LADSPA)
 // #error "You need to set either the JUCE_PLUGINHOST_AU and/or JUCE_PLUGINHOST_VST and/or JUCE_PLUGINHOST_VST3 and/or JUCE_PLUGINHOST_LADSPA flags if you're using this module!"
 #endif
