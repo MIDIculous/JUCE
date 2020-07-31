@@ -1416,6 +1416,10 @@ public:
 
     RectangleList<float> deferredRepaints;
     uint32 lastRepaintTime;
+#if JUCE_ENABLE_REPAINT_CACHE
+        detail::ContextPtr bitmapContext;
+        RectangleList<int> dirtyRects;
+#endif /* JUCE_ENABLE_REPAINT_CACHE */
 
     static ComponentPeer* currentlyFocusedPeer;
     static Array<int> keysCurrentlyDown;
@@ -1649,6 +1653,11 @@ struct JuceNSViewClass   : public ObjCClass<NSView>
         addMethod (@selector (cut:),                          cut,                        "v@:@");
 
         addMethod (@selector (viewWillMoveToWindow:),         willMoveToWindow,           "v@:@");
+        
+#if JUCE_ENABLE_REPAINT_CACHE
+        addMethod (@selector (setNeedsDisplay:),                        setNeedsDisplay,                      "v@:");
+        addMethod (@selector (setNeedsDisplayInRect:),                        setNeedsDisplayInRect,                      "v@:", @encode (NSRect));
+#endif /* JUCE_ENABLE_REPAINT_CACHE */
 
         addProtocol (@protocol (NSTextInput));
 
@@ -1704,7 +1713,64 @@ private:
     static BOOL wantsDefaultClipping (id, SEL)                 { return YES; } // (this is the default, but may want to customise it in future)
     static BOOL worksWhenModal (id self, SEL)                  { if (auto* p = getOwner (self)) return p->worksWhenModal(); return NO; }
 
-    static void drawRect (id self, SEL, NSRect r)              { if (auto* p = getOwner (self)) p->drawRect (r); }
+    static void drawRect (NSView* self, SEL, NSRect r) {
+        auto* p = getOwner (self);
+        if (!p)
+            return;
+        
+#if JUCE_ENABLE_REPAINT_CACHE
+        const auto scale = self.layer.contentsScale;
+        const auto frame = self.frame;
+
+        if (p->bitmapContext == nullptr
+            || CGBitmapContextGetWidth (p->bitmapContext.get()) != frame.size.width * scale
+            || CGBitmapContextGetHeight (p->bitmapContext.get()) != frame.size.height * scale)
+        {
+            auto colourSpace = detail::ColorSpacePtr { CGColorSpaceCreateWithName (kCGColorSpaceSRGB) };
+
+            p->bitmapContext = detail::ContextPtr {
+                CGBitmapContextCreate (nullptr,
+                                       static_cast<size_t> (frame.size.width * scale),
+                                       static_cast<size_t> (frame.size.height * scale),
+                                       8, 0, colourSpace.get(),
+                                       kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Little)
+            };
+
+            // we re-created the context, so we need to repaint everything
+            p->dirtyRects.clear();
+            p->dirtyRects.add (convertToRectInt (frame));
+        }
+
+        auto bitmapContextRef = p->bitmapContext.get();
+        
+        NSGraphicsContext* context = NSGraphicsContext.currentContext;
+        CGContextRef cg = context.CGContext;
+        const BOOL flipped = NO;
+        if (@available(macOS 10.10, *)) {
+            NSGraphicsContext.currentContext = [NSGraphicsContext graphicsContextWithCGContext:bitmapContextRef flipped:flipped];
+        }
+        else {
+            NSGraphicsContext.currentContext = [NSGraphicsContext graphicsContextWithGraphicsPort:bitmapContextRef flipped:flipped];
+        }
+        
+        CoreGraphicsContext g (bitmapContextRef, static_cast<float> (frame.size.height));
+        CGContextConcatCTM (bitmapContextRef, CGAffineTransformMakeScale (scale, scale));
+        CGContextConcatCTM (bitmapContextRef, CGAffineTransformMake (1, 0, 0, -1, 0, frame.size.height));
+        g.clipToRectangleList (p->dirtyRects);
+        p->dirtyRects.clear();
+        CGContextConcatCTM (bitmapContextRef, CGAffineTransformMake (1, 0, 0, -1, 0, frame.size.height));
+#endif /* JUCE_ENABLE_REPAINT_CACHE */
+        
+        p->drawRect (r);
+        
+#if JUCE_ENABLE_REPAINT_CACHE
+        NSGraphicsContext.currentContext = context;
+        auto imageOfBitmapContext = CGBitmapContextCreateImage (bitmapContextRef);
+        CGContextDrawImage (cg, frame, imageOfBitmapContext);
+        CGImageRelease (imageOfBitmapContext);
+#endif /* JUCE_ENABLE_REPAINT_CACHE */
+    }
+    
     static void frameChanged (id self, SEL, NSNotification*)   { if (auto* p = getOwner (self)) p->redirectMovedOrResized(); }
     static void viewDidMoveToWindow (id self, SEL)             { if (auto* p = getOwner (self)) p->viewMovedToWindow(); }
 
@@ -1960,6 +2026,27 @@ private:
     }
 
     static void concludeDragOperation (id, SEL, id<NSDraggingInfo>) {}
+    
+
+#if JUCE_ENABLE_REPAINT_CACHE
+    static void setNeedsDisplay (id self, SEL) {
+        const NSRect frame = [(NSView*)self frame];
+        
+        if (auto* p = getOwner (self)) {
+            p->dirtyRects.clear();
+            p->dirtyRects.add(convertToRectInt(frame));
+        }
+        
+        sendSuperclassMessage(self, @selector(setNeedsDisplayInRect:), frame);
+    }
+    
+    static void setNeedsDisplayInRect (id self, SEL, NSRect rect)   {
+        if (auto* p = getOwner (self))
+            p->dirtyRects.add(convertToRectInt(rect));
+        
+        sendSuperclassMessage(self, @selector(setNeedsDisplayInRect:), rect);
+    }
+#endif /* JUCE_ENABLE_REPAINT_CACHE */
 };
 
 //==============================================================================

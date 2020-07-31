@@ -287,10 +287,11 @@ struct ObjCClass
     }
 
    #if JUCE_MAC || JUCE_IOS
-    static id sendSuperclassMessage (id self, SEL selector)
+    template<typename... Args>
+    static id sendSuperclassMessage (id self, SEL selector, Args&&... args)
     {
         objc_super s = { self, [SuperclassType class] };
-        return getMsgSendSuperFn() (&s, selector);
+        return getMsgSendSuperFn() (&s, selector, args...);
     }
    #endif
 
