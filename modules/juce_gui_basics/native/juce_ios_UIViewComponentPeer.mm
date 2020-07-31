@@ -108,11 +108,11 @@ using namespace juce;
 @public
     UIViewComponentPeer* owner;
     UITextView* hiddenTextView;
-#if JUCE_ENABLE_IOS_REPAINT_CACHE
+#if JUCE_ENABLE_REPAINT_CACHE
 @private
     detail::ContextPtr bitmapContext;
     RectangleList<int> dirtyRects;
-#endif /* JUCE_ENABLE_IOS_REPAINT_CACHE */
+#endif /* JUCE_ENABLE_REPAINT_CACHE */
 }
 
 - (JuceUIView*) initWithOwner: (UIViewComponentPeer*) owner withFrame: (CGRect) frame;
@@ -482,7 +482,7 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     [super dealloc];
 }
 
-#if JUCE_ENABLE_IOS_REPAINT_CACHE
+#if JUCE_ENABLE_REPAINT_CACHE
 - (void) setNeedsDisplay
 {
     dirtyRects.clear();
@@ -495,14 +495,14 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     dirtyRects.add(convertToRectInt(r));
     [super setNeedsDisplayInRect:r];
 }
-#endif /* JUCE_ENABLE_IOS_REPAINT_CACHE */
+#endif /* JUCE_ENABLE_REPAINT_CACHE */
 
 //==============================================================================
 - (void) drawRect: (CGRect) r
 {
     if (owner != nullptr)
     {
-        #if JUCE_ENABLE_IOS_REPAINT_CACHE
+        #if JUCE_ENABLE_REPAINT_CACHE
             const auto scale = self.contentScaleFactor;
             const auto frame = self.frame;
 
@@ -536,16 +536,16 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
             g.clipToRectangleList (dirtyRects);
             dirtyRects.clear();
             CGContextConcatCTM (bitmapContextRef, CGAffineTransformMake (1, 0, 0, -1, 0, frame.size.height));
-        #endif /* JUCE_ENABLE_IOS_REPAINT_CACHE */
+        #endif /* JUCE_ENABLE_REPAINT_CACHE */
 
         owner->drawRect (r);
         
-        #if JUCE_ENABLE_IOS_REPAINT_CACHE
+        #if JUCE_ENABLE_REPAINT_CACHE
             UIGraphicsPopContext();
             auto imageOfBitmapContext = CGBitmapContextCreateImage (bitmapContextRef);
             CGContextDrawImage (cg, frame, imageOfBitmapContext);
             CGImageRelease (imageOfBitmapContext);
-        #endif /* JUCE_ENABLE_IOS_REPAINT_CACHE */
+        #endif /* JUCE_ENABLE_REPAINT_CACHE */
  }
 }
 
