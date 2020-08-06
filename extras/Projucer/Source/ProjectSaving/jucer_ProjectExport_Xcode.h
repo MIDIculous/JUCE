@@ -196,7 +196,6 @@ public:
     bool isHardenedRuntimeEnabled() const                   { return hardenedRuntimeValue.get(); }
     Array<var> getHardenedRuntimeOptions() const            { return *hardenedRuntimeOptionsValue.get().getArray(); }
     String getOnDemandResourcesString() const          { return onDemandResourcesValue.get(); }
-    String getCustomResourceFoldersString() const      { return customXcodeResourceFoldersValue.get().toString().replaceCharacters ("\r\n", "::"); }
 
     bool isAppSandboxEnabled() const                        { return appSandboxValue.get(); }
     bool isAppSandboxInhertianceEnabled() const             { return appSandboxInheritanceValue.get(); }
@@ -2592,6 +2591,8 @@ private:
     
     void addOnDemandResource(String resourcePathRelativeToProjectFolder) const
     {
+        using build_tools::RelativePath;
+        
         auto path = RelativePath (resourcePathRelativeToProjectFolder, RelativePath::projectFolder)
                         .rebased (projectFolder, getTargetFolder(), RelativePath::buildTargetFolder);
         auto fileRefID = createFileRefID (path.toUnixStyle());

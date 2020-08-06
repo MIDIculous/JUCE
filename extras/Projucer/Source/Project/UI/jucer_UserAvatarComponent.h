@@ -37,28 +37,23 @@ public:
     UserAvatarComponent (bool isInteractive)
         : interactive (isInteractive)
     {
-        ProjucerApplication::getApp().getLicenseController().addListener (this);
         lookAndFeelChanged();
     }
 
     ~UserAvatarComponent() override
     {
-        ProjucerApplication::getApp().getLicenseController().removeListener (this);
     }
 
     void paint (Graphics& g) override
     {
         auto bounds = getLocalBounds();
 
-        if (! isGPL)
-        {
-            bounds = bounds.removeFromRight (bounds.getHeight());
-
-            Path ellipse;
-            ellipse.addEllipse (bounds.toFloat());
-
-            g.reduceClipRegion (ellipse);
-        }
+        bounds = bounds.removeFromRight (bounds.getHeight());
+        
+        Path ellipse;
+        ellipse.addEllipse (bounds.toFloat());
+        
+        g.reduceClipRegion (ellipse);
 
         g.drawImage (currentAvatar, bounds.toFloat(), RectanglePlacement::fillDestination);
     }
@@ -74,27 +69,8 @@ public:
         }
     }
 
-    bool isDisplaingGPLLogo() const noexcept  { return isGPL; }
-
 private:
     //==============================================================================
-    static Image createGPLAvatarImage()
-    {
-        if (auto logo = Drawable::createFromImageData (BinaryData::gpl_logo_svg, BinaryData::gpl_logo_svgSize))
-        {
-            auto bounds = logo->getDrawableBounds();
-
-            Image image (Image::ARGB, roundToInt (bounds.getWidth()), roundToInt (bounds.getHeight()), true);
-            Graphics g (image);
-            logo->draw (g, 1.0f);
-
-            return image;
-        }
-
-        jassertfalse;
-        return {};
-    }
-
     Image createStandardAvatarImage()
     {
         Image image (Image::ARGB, 250, 250, true);
@@ -115,25 +91,12 @@ private:
     //==============================================================================
     void licenseStateChanged() override
     {
-        auto state = ProjucerApplication::getApp().getLicenseController().getCurrentState();
-
-        isGPL = ProjucerApplication::getApp().getLicenseController().getCurrentState().isGPL();
-
         if (interactive)
         {
-            auto formattedUserString = [state]() -> String
-            {
-                if (state.isSignedIn())
-                    return (state.isGPL() ? "" : (state.username + " - ")) + state.getLicenseTypeString();
-
-                return "Not logged in";
-            }();
-
-            setTooltip (formattedUserString);
+            setTooltip ({});
         }
 
-        currentAvatar = isGPL ? gplAvatarImage
-                              : state.isSignedIn() ? standardAvatarImage : signedOutAvatarImage;
+        currentAvatar = standardAvatarImage;
 
         repaint();
         sendChangeMessage();
@@ -152,6 +115,6 @@ private:
     }
 
     //==============================================================================
-    Image standardAvatarImage, signedOutAvatarImage, gplAvatarImage { createGPLAvatarImage() }, currentAvatar;
-    bool isGPL = false, interactive = false;
+    Image standardAvatarImage, signedOutAvatarImage, currentAvatar;
+    bool interactive = false;
 };

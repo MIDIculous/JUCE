@@ -100,8 +100,7 @@ void HeaderComponent::resized()
         configLabel.setBounds (exporterBounds);
     }
 
-    userAvatar.setBounds (bounds.removeFromRight (userAvatar.isDisplaingGPLLogo() ? roundToInt ((float) bounds.getHeight() * 1.9f)
-                                                                                  : bounds.getHeight()).reduced (2));
+    userAvatar.setBounds (bounds.removeFromRight (bounds.getHeight()).reduced (2));
 }
 
 void HeaderComponent::paint (Graphics& g)

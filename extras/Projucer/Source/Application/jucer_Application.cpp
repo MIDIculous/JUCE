@@ -124,31 +124,6 @@ bool ProjucerApplication::initialiseLogger (const char* filePrefix)
     return logger != nullptr;
 }
 
-void ProjucerApplication::handleAsyncUpdate()
-{
-    if (licenseController != nullptr)
-        licenseController->startWebviewIfNeeded();
-
-   #if JUCE_MAC
-    PopupMenu extraAppleMenuItems;
-    createExtraAppleMenuItems (extraAppleMenuItems);
-
-    // workaround broken "Open Recent" submenu: not passing the
-    // submenu's title here avoids the defect in JuceMainMenuHandler::addMenuItem
-    MenuBarModel::setMacMainMenu (menuModel.get(), &extraAppleMenuItems); //, "Open Recent");
-   #endif
-        
-
-    if (licenseController != nullptr)
-    {
-        setAnalyticsEnabled (false);
-        Analytics::getInstance()->logEvent ("Startup", {}, ProjucerAnalyticsEvent::appEvent);
-    }
-
-    if (! isRunningCommandLine && settings->shouldAskUserToSetJUCEPath())
-        showSetJUCEPathAlert();
-}
-
 void ProjucerApplication::initialiseWindows (const String& commandLine)
 {
     const String commandLineWithoutNSDebug (commandLine.replace ("-NSDocumentRevisionsDebugMode YES", StringRef()));
@@ -163,8 +138,6 @@ void ProjucerApplication::initialiseWindows (const String& commandLine)
 
 void ProjucerApplication::handleAsyncUpdate()
 {
-    licenseController = std::make_unique<LicenseController>();
-
     LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
 
     rescanJUCEPathModules();
@@ -1113,17 +1086,8 @@ void ProjucerApplication::getCommandInfo (CommandID commandID, ApplicationComman
         break;
 
     case CommandIDs::loginLogout:
-        {
-            auto licenseState = licenseController->getCurrentState();
-
-            if (licenseState.isGPL())
-                result.setInfo ("Disable GPL mode", "Disables GPL mode", CommandCategories::general, 0);
-            else
-                result.setInfo (licenseState.isSignedIn() ? String ("Sign out ") + licenseState.username + "..." : String ("Sign in..."),
-                                "Sign out of your JUCE account",
-                                CommandCategories::general, 0);
-            break;
-        }
+        result.shortName = "Login/Logout";
+        break;
 
     default:
         JUCEApplication::getCommandInfo (commandID, result);
@@ -1381,22 +1345,7 @@ void ProjucerApplication::launchTutorialsBrowser()
 
 void ProjucerApplication::doLoginOrLogout()
 {
-    if (licenseController->getCurrentState().isSignedIn())
-    {
-        licenseController->resetState();
-    }
-    else
-    {
-        if (auto* window = mainWindowList.getMainWindowWithLoginFormOpen())
-        {
-            window->toFront (true);
-        }
-        else
-        {
-            mainWindowList.createWindowIfNoneAreOpen();
-            mainWindowList.getFrontmostWindow()->showLoginFormOverlay();
-        }
-    }
+    
 }
 
 //==============================================================================

@@ -52,7 +52,6 @@ public:
         addAndMakeVisible (enableGPLButton);
         enableGPLButton.onClick = [this]
         {
-            ProjucerApplication::getApp().getLicenseController().setState (LicenseController::getGPLState());
             mainWindow.hideLoginFormOverlay();
         };
 
@@ -83,7 +82,6 @@ public:
 
     ~LoginFormComponent() override
     {
-        ProjucerApplication::getApp().getLicenseController().cancelSignIn();
     }
 
     void resized() override
@@ -226,9 +224,6 @@ private:
                 ProjucerApplication::getApp().getCommandManager().commandStatusChanged();
             }
         };
-
-        ProjucerApplication::getApp().getLicenseController().signIn (emailBox.getText(), passwordBox.getText(),
-                                                                     std::move (completionCallback));
     }
 
     String checkLoginFormsAreValid() const

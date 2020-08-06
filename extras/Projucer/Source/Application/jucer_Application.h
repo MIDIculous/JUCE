@@ -81,8 +81,6 @@ public:
     AvailableModulesList& getJUCEPathModulesList()     { return jucePathModulesList; }
     AvailableModulesList& getUserPathsModulesList()    { return userPathsModulesList; }
 
-    LicenseController& getLicenseController()          { return *licenseController; }
-
     bool isAutomaticVersionCheckingEnabled() const;
     void setAutomaticVersionCheckingEnabled (bool shouldBeEnabled);
 
@@ -202,9 +200,6 @@ private:
 
     std::unique_ptr<AppleMenuRebuildListener> appleMenuRebuildListener;
    #endif
-
-    //==============================================================================
-    std::unique_ptr<LicenseController> licenseController;
 
     void* server = nullptr;
     std::unique_ptr<TooltipWindow> tooltipWindow;

@@ -103,9 +103,6 @@ Project::Project (const File& f)
 
     auto& app = ProjucerApplication::getApp();
 
-    if (! app.isRunningCommandLine)
-        app.getLicenseController().addListener (this);
-
     app.getJUCEPathModulesList().addListener (this);
     app.getUserPathsModulesList().addListener (this);
 
@@ -124,9 +121,6 @@ Project::~Project()
     auto& app = ProjucerApplication::getApp();
 
     app.openDocumentManager.closeAllDocumentsUsingProject (*this, OpenDocumentManager::SaveIfNeeded::no);
-
-    if (! app.isRunningCommandLine)
-        app.getLicenseController().removeListener (this);
 
     app.getJUCEPathModulesList().removeListener (this);
     app.getUserPathsModulesList().removeListener (this);
@@ -736,13 +730,7 @@ Result Project::saveResourcesOnly()
 
 bool Project::hasIncompatibleLicenseTypeAndSplashScreenSetting() const
 {
-    auto companyName = companyNameValue.get().toString();
-    auto isJUCEProject = (companyName == "Raw Material Software Limited"
-                       || companyName == "JUCE"
-                       || companyName == "ROLI Ltd.");
-
-    return ! ProjucerApplication::getApp().isRunningCommandLine && ! isJUCEProject && ! shouldDisplaySplashScreen()
-          && ! ProjucerApplication::getApp().getLicenseController().getCurrentState().canUnlockFullFeatures();
+    return false;
 }
 
 bool Project::isSaveAndExportDisabled() const
@@ -752,23 +740,7 @@ bool Project::isSaveAndExportDisabled() const
 
 void Project::updateLicenseWarning()
 {
-    if (hasIncompatibleLicenseTypeAndSplashScreenSetting())
-    {
-        ProjectMessages::MessageAction action;
-        auto currentLicenseState = ProjucerApplication::getApp().getLicenseController().getCurrentState();
-
-        if (currentLicenseState.isSignedIn() && (! currentLicenseState.canUnlockFullFeatures() || currentLicenseState.isOldLicense()))
-            action = { "Upgrade", [] { URL ("https://juce.com/get-juce").launchInDefaultBrowser(); } };
-        else
-            action = { "Sign in", [this] { ProjucerApplication::getApp().mainWindowList.getMainWindowForFile (getFile())->showLoginFormOverlay(); } };
-
-        addProjectMessage (ProjectMessages::Ids::incompatibleLicense,
-                           { std::move (action), { "Enable splash screen", [this] { displaySplashScreenValue = true; } } });
-    }
-    else
-    {
-        removeProjectMessage (ProjectMessages::Ids::incompatibleLicense);
-    }
+    removeProjectMessage (ProjectMessages::Ids::incompatibleLicense);
 }
 
 void Project::updateJUCEPathWarning()

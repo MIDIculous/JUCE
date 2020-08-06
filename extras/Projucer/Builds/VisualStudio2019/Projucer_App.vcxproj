@@ -702,6 +702,9 @@
     <ClCompile Include="..\..\..\..\modules\juce_graphics\effects\juce_GlowEffect.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_graphics\fonts\GlyphArrangementCache.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\fonts\juce_AttributedString.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -1868,6 +1871,7 @@
     <ClInclude Include="..\..\..\..\modules\juce_graphics\effects\juce_DropShadowEffect.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\effects\juce_GlowEffect.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\effects\juce_ImageEffectFilter.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\GlyphArrangementCache.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_AttributedString.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_CustomTypeface.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_Font.h"/>
@@ -1914,6 +1918,7 @@
     <ClInclude Include="..\..\..\..\modules\juce_graphics\native\juce_win32_Direct2DGraphicsContext.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\placement\juce_Justification.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\placement\juce_RectanglePlacement.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_graphics\third_party\flat_hash_map.hpp"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\juce_graphics.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\application\juce_Application.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\buttons\juce_ArrowButton.h"/>

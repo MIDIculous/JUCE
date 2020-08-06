@@ -4,7 +4,7 @@ class GlyphArrangementCache final : private DeletedAtShutdown, private Timer
 public:
     JUCE_DECLARE_SINGLETON(GlyphArrangementCache, /* doNotRecreateAfterDeletion: */ false)
 
-    ~GlyphArrangementCache();
+    ~GlyphArrangementCache() override;
 
     const GlyphArrangement& getSingleLineText(const Font& font,
                                               const String& text,

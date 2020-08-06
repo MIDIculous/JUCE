@@ -227,6 +227,9 @@
     <Filter Include="JUCE Modules\juce_graphics\placement">
       <UniqueIdentifier>{160D9882-0F68-278D-C5F9-8960FD7421D2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="JUCE Modules\juce_graphics\third_party">
+      <UniqueIdentifier>{6C38CC0E-8372-2FCE-99DD-88C237BED194}</UniqueIdentifier>
+    </Filter>
     <Filter Include="JUCE Modules\juce_graphics">
       <UniqueIdentifier>{4CED05DA-E0A2-E548-F753-1F2EF299A8E3}</UniqueIdentifier>
     </Filter>
@@ -1014,6 +1017,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\effects\juce_GlowEffect.cpp">
       <Filter>JUCE Modules\juce_graphics\effects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_graphics\fonts\GlyphArrangementCache.cpp">
+      <Filter>JUCE Modules\juce_graphics\fonts</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\fonts\juce_AttributedString.cpp">
       <Filter>JUCE Modules\juce_graphics\fonts</Filter>
@@ -3018,6 +3024,9 @@
     <ClInclude Include="..\..\..\..\modules\juce_graphics\effects\juce_ImageEffectFilter.h">
       <Filter>JUCE Modules\juce_graphics\effects</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\GlyphArrangementCache.h">
+      <Filter>JUCE Modules\juce_graphics\fonts</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_AttributedString.h">
       <Filter>JUCE Modules\juce_graphics\fonts</Filter>
     </ClInclude>
@@ -3155,6 +3164,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\placement\juce_RectanglePlacement.h">
       <Filter>JUCE Modules\juce_graphics\placement</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\modules\juce_graphics\third_party\flat_hash_map.hpp">
+      <Filter>JUCE Modules\juce_graphics\third_party</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\juce_graphics.h">
       <Filter>JUCE Modules\juce_graphics</Filter>
