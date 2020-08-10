@@ -2362,6 +2362,8 @@ private:
 
     struct ComponentHelpers;
     friend struct ComponentHelpers;
+    
+    friend void setComponentScaleFactor(Component&, float) noexcept;
 
     /* Components aren't allowed to have copy constructors, as this would mess up parent hierarchies.
        You might need to give your subclasses a private dummy constructor to avoid compiler warnings.

@@ -172,6 +172,7 @@ namespace juce
 #include "components/juce_ComponentListener.h"
 #include "components/juce_CachedComponentImage.h"
 #include "components/juce_Component.h"
+#include "components/juce_Component_Scaling.h"
 #include "layout/juce_ComponentAnimator.h"
 #include "desktop/juce_Desktop.h"
 #include "desktop/juce_Displays.h"

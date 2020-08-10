@@ -102,6 +102,7 @@ namespace juce
     extern bool juce_areThereAnyAlwaysOnTopWindows();
 }
 
+#include "components/juce_Component_Scaling.cpp"
 #include "components/juce_Component.cpp"
 #include "components/juce_ComponentListener.cpp"
 #include "mouse/juce_MouseInputSource.cpp"

@@ -296,8 +296,7 @@ struct Component::ComponentHelpers
     template <typename PointOrRect>
     static PointOrRect rawPeerPositionToLocal (const Component& comp, PointOrRect pos) noexcept
     {
-        if (comp.isTransformed())
-            pos = pos.transformedBy (comp.getTransform().inverted());
+        pos = applyInvertedTransformAndComponentScaleFactor(comp, pos);
 
         return ScalingHelpers::unscaledScreenPosToScaled (comp, pos);
     }
@@ -306,8 +305,7 @@ struct Component::ComponentHelpers
     template <typename PointOrRect>
     static PointOrRect localPositionToRawPeerPos (const Component& comp, PointOrRect pos) noexcept
     {
-        if (comp.isTransformed())
-            pos = pos.transformedBy (comp.getTransform());
+        pos = applyTransformAndComponentScaleFactor(comp, pos);
 
         return ScalingHelpers::scaledScreenPosToUnscaled (comp, pos);
     }
@@ -315,9 +313,8 @@ struct Component::ComponentHelpers
     template <typename PointOrRect>
     static PointOrRect convertFromParentSpace (const Component& comp, PointOrRect pointInParentSpace)
     {
-        if (comp.affineTransform != nullptr)
-            pointInParentSpace = pointInParentSpace.transformedBy (comp.affineTransform->inverted());
-
+        pointInParentSpace = applyInvertedTransformAndComponentScaleFactor(comp, pointInParentSpace);
+        
         if (comp.isOnDesktop())
         {
             if (auto* peer = comp.getPeer())
@@ -349,9 +346,8 @@ struct Component::ComponentHelpers
         {
             pointInLocalSpace = ScalingHelpers::addPosition (pointInLocalSpace, comp);
         }
-
-        if (comp.affineTransform != nullptr)
-            pointInLocalSpace = pointInLocalSpace.transformedBy (*comp.affineTransform);
+        
+        pointInLocalSpace = applyTransformAndComponentScaleFactor(comp, pointInLocalSpace);
 
         return pointInLocalSpace;
     }
@@ -1174,7 +1170,9 @@ void Component::setTopLeftPosition (Point<int> pos)     { setBounds (pos.x, pos.
 void Component::setTopRightPosition (int x, int y)      { setTopLeftPosition (x - getWidth(), y); }
 void Component::setBounds (Rectangle<int> r)            { setBounds (r.getX(), r.getY(), r.getWidth(), r.getHeight()); }
 
-void Component::setCentrePosition (Point<int> p)        { setBounds (getBounds().withCentre (p.transformedBy (getTransform().inverted()))); }
+void Component::setCentrePosition (Point<int> p)        { setBounds (getBounds().withCentre (applyInvertedTransformAndComponentScaleFactor(*this, p))); }
+
+
 void Component::setCentrePosition (int x, int y)        { setCentrePosition ({ x, y }); }
 
 void Component::setCentreRelative (float x, float y)
@@ -1196,8 +1194,7 @@ void Component::setBoundsRelative (float x, float y, float w, float h)
 
 void Component::centreWithSize (int width, int height)
 {
-    auto parentArea = ComponentHelpers::getParentOrMainMonitorBounds (*this)
-                          .transformedBy (getTransform().inverted());
+    auto parentArea = applyInvertedTransformAndComponentScaleFactor(*this, ComponentHelpers::getParentOrMainMonitorBounds (*this));
 
     setBounds (parentArea.getCentreX() - width / 2,
                parentArea.getCentreY() - height / 2,
@@ -1293,8 +1290,8 @@ float Component::getApproximateScaleFactorForComponent (Component* targetCompone
 
     for (auto* target = targetComponent; target != nullptr; target = target->getParentComponent())
     {
-        transform = transform.followedBy (target->getTransform());
-
+        transform = applyTransformAndComponentScaleFactor(transform, *target);
+        
         if (target->isOnDesktop())
             transform = transform.scaled (target->getDesktopScaleFactor());
     }
@@ -1856,8 +1853,8 @@ void Component::internalRepaintUnchecked (Rectangle<int> area, bool isEntireComp
                 auto peerBounds = peer->getBounds();
                 auto scaled = area * Point<float> ((float) peerBounds.getWidth()  / (float) getWidth(),
                                                    (float) peerBounds.getHeight() / (float) getHeight());
-
-                peer->repaint (affineTransform != nullptr ? scaled.transformedBy (*affineTransform) : scaled);
+                
+                peer->repaint (applyTransformAndComponentScaleFactor(*this, scaled));
             }
         }
         else
@@ -1914,11 +1911,11 @@ void Component::paintComponentAndChildren (Graphics& g)
 
         if (child.isVisible())
         {
-            if (child.affineTransform != nullptr)
+            if (hasTransformOrComponentScaleFactor(child))
             {
                 Graphics::ScopedSaveState ss (g);
 
-                g.addTransform (*child.affineTransform);
+                g.addTransform (getTransformWithComponentScaleFactor(child));
 
                 if ((child.flags.dontClipGraphicsFlag && ! g.isClipEmpty()) || g.reduceClipRegion (child.getBounds()))
                     child.paintWithinParentContext (g);
@@ -1939,7 +1936,7 @@ void Component::paintComponentAndChildren (Graphics& g)
                     {
                         auto& sibling = *childComponentList.getUnchecked (j);
 
-                        if (sibling.flags.opaqueFlag && sibling.isVisible() && sibling.affineTransform == nullptr)
+                        if (sibling.flags.opaqueFlag && sibling.isVisible() && !hasTransformOrComponentScaleFactor(sibling))
                         {
                             nothingClipped = false;
                             g.excludeClipRegion (sibling.getBounds());
@@ -2176,8 +2173,7 @@ Rectangle<int> Component::getLocalBounds() const noexcept
 
 Rectangle<int> Component::getBoundsInParent() const noexcept
 {
-    return affineTransform == nullptr ? boundsRelativeToParent
-                                      : boundsRelativeToParent.transformedBy (*affineTransform);
+    return applyTransformAndComponentScaleFactor(*this, boundsRelativeToParent);
 }
 
 //==============================================================================
