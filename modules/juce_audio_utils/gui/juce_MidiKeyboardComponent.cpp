@@ -774,11 +774,17 @@ void MidiKeyboardComponent::updateNoteUnderMouse (Point<float> pos, bool isDown,
 
 void MidiKeyboardComponent::mouseMove (const MouseEvent& e)
 {
+    if (e.mods.isPopupMenu())
+        return;
+    
     updateNoteUnderMouse (e, false);
 }
 
 void MidiKeyboardComponent::mouseDrag (const MouseEvent& e)
 {
+    if (e.mods.isPopupMenu())
+        return;
+    
     float mousePositionVelocity;
     auto newNote = xyToNote (e.position, mousePositionVelocity);
 
@@ -792,6 +798,9 @@ void MidiKeyboardComponent::mouseUpOnKey      (int, const MouseEvent&)  {}
 
 void MidiKeyboardComponent::mouseDown (const MouseEvent& e)
 {
+    if (e.mods.isPopupMenu())
+        return;
+    
     float mousePositionVelocity;
     auto newNote = xyToNote (e.position, mousePositionVelocity);
 
@@ -801,6 +810,9 @@ void MidiKeyboardComponent::mouseDown (const MouseEvent& e)
 
 void MidiKeyboardComponent::mouseUp (const MouseEvent& e)
 {
+    if (e.mods.isPopupMenu())
+        return;
+    
     updateNoteUnderMouse (e, false);
 
     float mousePositionVelocity;
@@ -812,16 +824,25 @@ void MidiKeyboardComponent::mouseUp (const MouseEvent& e)
 
 void MidiKeyboardComponent::mouseEnter (const MouseEvent& e)
 {
+    if (e.mods.isPopupMenu())
+        return;
+    
     updateNoteUnderMouse (e, false);
 }
 
 void MidiKeyboardComponent::mouseExit (const MouseEvent& e)
 {
+    if (e.mods.isPopupMenu())
+        return;
+    
     updateNoteUnderMouse (e, false);
 }
 
-void MidiKeyboardComponent::mouseWheelMove (const MouseEvent&, const MouseWheelDetails& wheel)
+void MidiKeyboardComponent::mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& wheel)
 {
+    if (e.mods.isPopupMenu())
+        return;
+    
     auto amount = (orientation == horizontalKeyboard && wheel.deltaX != 0)
                        ? wheel.deltaX : (orientation == verticalKeyboardFacingLeft ? wheel.deltaY
                                                                                    : -wheel.deltaY);
