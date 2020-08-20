@@ -53,12 +53,12 @@ namespace {
 
     static Rectangle<int> applyTransformAndComponentScaleFactor(const Component& comp, Rectangle<int> r) noexcept
     {
-        return (r.transformedBy(comp.getTransform()) * getComponentScaleFactorProperty(comp)).toNearestIntEdges();
+        return (r.transformedBy(comp.getTransform()) * getComponentScaleFactorProperty(comp)).getSmallestIntegerContainer();
     }
 
     static Rectangle<int> applyInvertedTransformAndComponentScaleFactor(const Component& comp, Rectangle<int> r) noexcept
     {
-        return (r.transformedBy(comp.getTransform().inverted()) / getComponentScaleFactorProperty(comp)).toNearestIntEdges();
+        return (r.transformedBy(comp.getTransform().inverted()) / getComponentScaleFactorProperty(comp)).getSmallestIntegerContainer();
     }
 
     static bool hasTransformOrComponentScaleFactor(const Component& comp) noexcept

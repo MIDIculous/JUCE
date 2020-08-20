@@ -396,30 +396,38 @@ struct Component::ComponentHelpers
     static bool clipObscuredRegions (const Component& comp, Graphics& g,
                                      const Rectangle<int> clipRect, Point<int> delta)
     {
+        if (comp.getName() == "MainComponent background")
+            printf("");
+        
         bool wasClipped = false;
 
         for (int i = comp.childComponentList.size(); --i >= 0;)
         {
             auto& child = *comp.childComponentList.getUnchecked(i);
+            if (!child.isVisible())
+                continue;
+            
+            Rectangle<int> childBounds;
+            if (hasTransformOrComponentScaleFactor(child))
+                childBounds = comp.getLocalArea(&child, child.getLocalBounds());
+            else
+                childBounds = child.boundsRelativeToParent;
+            
+            auto newClip = clipRect.getIntersection (childBounds);
 
-            if (child.isVisible() && ! child.isTransformed())
+            if (! newClip.isEmpty())
             {
-                auto newClip = clipRect.getIntersection (child.boundsRelativeToParent);
-
-                if (! newClip.isEmpty())
+                if (child.isOpaque() && child.componentTransparency == 0)
                 {
-                    if (child.isOpaque() && child.componentTransparency == 0)
-                    {
-                        g.excludeClipRegion (newClip + delta);
-                        wasClipped = true;
-                    }
-                    else
-                    {
-                        auto childPos = child.getPosition();
+                    g.excludeClipRegion (newClip + delta);
+                    wasClipped = true;
+                }
+                else
+                {
+                    auto childPos = child.getPosition();
 
-                        if (clipObscuredRegions (child, g, newClip - childPos, childPos + delta))
-                            wasClipped = true;
-                    }
+                    if (clipObscuredRegions (child, g, newClip - childPos, childPos + delta))
+                        wasClipped = true;
                 }
             }
         }
@@ -1904,6 +1912,10 @@ void Component::paintComponentAndChildren (Graphics& g)
         if (! (ComponentHelpers::clipObscuredRegions (*this, g, clipBounds, {}) && g.isClipEmpty()))
             paint (g);
     }
+    
+    if (getName().isNotEmpty() && !g.getClipBounds().isEmpty()) {
+        DBG(Time::getCurrentTime().toString(/* includeDate: */ false, /* includeTime: */ true) +  " Painting: " + getName() + ": " + g.getClipBounds().toString());
+    }
 
     for (int i = 0; i < childComponentList.size(); ++i)
     {
@@ -1952,6 +1964,15 @@ void Component::paintComponentAndChildren (Graphics& g)
 
     Graphics::ScopedSaveState ss (g);
     paintOverChildren (g);
+    
+    if (getName().isNotEmpty()) {
+        auto& random = Random::getSystemRandom();
+        g.setColour(Colour(random.nextInt(UINT8_MAX),
+                           random.nextInt(UINT8_MAX),
+                           random.nextInt(UINT8_MAX))
+                    .withAlpha(0.3f));
+        g.fillRect(g.getClipBounds());
+    }
 }
 
 void Component::paintEntireComponent (Graphics& g, bool ignoreAlphaLevel)

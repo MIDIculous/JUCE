@@ -452,7 +452,7 @@ private:
     static void setCommonAttributes (Drawable& d, const XmlPath& xml)
     {
         auto compID = xml->getStringAttribute ("id");
-        d.setName (compID);
+//        d.setName (compID);
         d.setComponentID (compID);
 
         if (isNone (xml->getStringAttribute ("display")))
