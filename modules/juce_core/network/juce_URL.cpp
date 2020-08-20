@@ -97,13 +97,13 @@ struct FallbackDownloadTask  : public URL::DownloadTask,
             if (downloaded == contentLength)
                 break;
         }
-
-        fileStream.reset();
         
         if (fileStream->getStatus().failed()) {
             errorMessage += (" fileStream->getStatus(): " + fileStream->getStatus().getErrorMessage());
             error = true;
         }
+
+        fileStream.reset();
 
         if (threadShouldExit() || stream->isError())
             error = true;
