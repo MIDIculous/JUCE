@@ -204,7 +204,7 @@ int64 BufferingAudioSource::getNextReadPosition() const
     jassert (source->getTotalLength() > 0);
     auto pos = nextPlayPos.load();
 
-    return (source->isLooping() && nextPlayPos > 0)
+    return (source->isLooping() && pos > 0)
                     ? pos % source->getTotalLength()
                     : pos;
 }
