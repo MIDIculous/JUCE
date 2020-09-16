@@ -54,7 +54,7 @@ public:
         If you want to release any keys that are currently down, and to send out note-up
         midi messages for this, use the allNotesOff() method instead.
     */
-    void reset();
+    virtual void reset();
 
     /** Returns true if the given midi key is currently held down for the given midi channel.
 
@@ -80,7 +80,7 @@ public:
         It will also trigger a synchronous callback to the listeners to tell them that the key has
         gone down.
     */
-    void noteOn (int midiChannel, int midiNoteNumber, float velocity);
+    virtual void noteOn (int midiChannel, int midiNoteNumber, float velocity);
 
     /** Turns a specified note off.
 
@@ -92,7 +92,7 @@ public:
 
         But if the note isn't actually down for the given channel, this method will in fact do nothing.
     */
-    void noteOff (int midiChannel, int midiNoteNumber, float velocity);
+    virtual void noteOff (int midiChannel, int midiNoteNumber, float velocity);
 
     /** This will turn off any currently-down notes for the given midi channel.
 
@@ -109,7 +109,7 @@ public:
         To process a buffer full of midi messages, use the processNextMidiBuffer() method
         instead.
     */
-    void processNextMidiEvent (const MidiMessage& message);
+    virtual void processNextMidiEvent (const MidiMessage& message);
 
     /** Scans a midi stream for up/down events and adds its own events to it.
 
