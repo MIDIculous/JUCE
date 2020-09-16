@@ -51,7 +51,12 @@ public:
 
     void setValue (const var& newValue) override
     {
-        auto remappedVal = mappings [static_cast<int> (newValue) - 1];
+        // Avoid setting sourceValue to a void variant when no item is selected in the ComboBox
+        const int asInt = static_cast<int> (newValue);
+        if (asInt == 0)
+            return;
+        
+        auto remappedVal = mappings [asInt - 1];
 
         if (! remappedVal.equalsWithSameType (sourceValue))
             sourceValue = remappedVal;
