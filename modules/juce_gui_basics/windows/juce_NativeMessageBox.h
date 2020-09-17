@@ -160,6 +160,9 @@ public:
     static int JUCE_CALLTYPE showYesNoCancelBox (AlertWindow::AlertIconType iconType,
                                                  const String& title,
                                                  const String& message,
+                                                 const String& button1Text,
+                                                 const String& button2Text,
+                                                 const String& button3Text,
                                                #if JUCE_MODAL_LOOPS_PERMITTED
                                                  Component* associatedComponent = nullptr,
                                                  ModalComponentManager::Callback* callback = nullptr);

@@ -218,7 +218,7 @@ FileBasedDocument::SaveResult FileBasedDocument::saveIfNeededAndUserAgrees()
                                                    TRANS("Do you want to save the changes to \"DCNM\"?")
                                                     .replace ("DCNM", getDocumentTitle()),
                                                    TRANS("Save"),
-                                                   TRANS("Discard changes"),
+                                                   TRANS("Don't Save"),
                                                    TRANS("Cancel"),
                                                    associatedComponent);
 

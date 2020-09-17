@@ -681,8 +681,15 @@ int AlertWindow::showYesNoCancelBox (AlertIconType iconType,
                                      Component* associatedComponent,
                                      ModalComponentManager::Callback* callback)
 {
-    if (LookAndFeel::getDefaultLookAndFeel().isUsingNativeAlertWindows())
-        return NativeMessageBox::showYesNoCancelBox (iconType, title, message, associatedComponent, callback);
+    auto& lookAndFeel = (associatedComponent ? associatedComponent->getLookAndFeel()
+                                             : LookAndFeel::getDefaultLookAndFeel());
+    if (lookAndFeel.isUsingNativeAlertWindows()) {
+        return NativeMessageBox::showYesNoCancelBox (iconType, title, message,
+                                                     button1Text.isEmpty() ? TRANS("Yes")     : button1Text,
+                                                     button2Text.isEmpty() ? TRANS("No")      : button2Text,
+                                                     button3Text.isEmpty() ? TRANS("Cancel")  : button3Text,
+                                                     associatedComponent, callback);
+    }
 
     AlertWindowInfo info (title, message, associatedComponent, iconType, 3, callback, callback == nullptr);
     info.button1 = button1Text.isEmpty() ? TRANS("Yes")     : button1Text;

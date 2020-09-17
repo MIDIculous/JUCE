@@ -1267,12 +1267,15 @@ bool JUCE_CALLTYPE NativeMessageBox::showOkCancelBox (AlertWindow::AlertIconType
 
 int JUCE_CALLTYPE NativeMessageBox::showYesNoCancelBox (AlertWindow::AlertIconType /*iconType*/,
                                                         const String& title, const String& message,
+                                                        const String& button1Text,
+                                                        const String& button2Text,
+                                                        const String& button3Text,
                                                         Component* /*associatedComponent*/,
                                                         ModalComponentManager::Callback* callback)
 {
     jassert (callback != nullptr); // on android, all alerts must be non-modal!!
 
-    createAndroidDialog (title, message, callback, "Yes", "No", "Cancel");
+    createAndroidDialog (title, message, callback, button1Text, button2Text, button3Text);
     return 0;
 }
 

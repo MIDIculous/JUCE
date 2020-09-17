@@ -632,10 +632,13 @@ bool JUCE_CALLTYPE NativeMessageBox::showOkCancelBox (AlertWindow::AlertIconType
 
 int JUCE_CALLTYPE NativeMessageBox::showYesNoCancelBox (AlertWindow::AlertIconType /*iconType*/,
                                                         const String& title, const String& message,
+                                                        const String& button1Text,
+                                                        const String& button2Text,
+                                                        const String& button3Text,
                                                         Component* /*associatedComponent*/,
                                                         ModalComponentManager::Callback* callback)
 {
-    std::unique_ptr<iOSMessageBox> mb (new iOSMessageBox (title, message, @"Cancel", @"Yes", @"No", callback, callback != nullptr));
+    std::unique_ptr<iOSMessageBox> mb (new iOSMessageBox (title, message, juceStringToNS(button3Text), juceStringToNS(button1Text), juceStringToNS(button2Text), callback, callback != nullptr));
 
     if (callback == nullptr)
         return mb->getResult();
