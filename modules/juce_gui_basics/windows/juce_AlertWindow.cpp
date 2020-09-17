@@ -249,7 +249,7 @@ public:
         s.append (getText(), getFont());
 
         TextLayout text;
-        text.createLayoutWithBalancedLineLengths (s, (float) width - 8.0f);
+        text.createLayout (s, (float) width - 8.0f);
         setSize (width, jmin (width, (int) (text.getHeight() + getFont().getHeight())));
     }
 
@@ -372,12 +372,12 @@ void AlertWindow::updateLayout (const bool onlyIncreaseSize)
     if (alertIconType == NoIcon)
     {
         attributedText.setJustification (Justification::centredTop);
-        textLayout.createLayoutWithBalancedLineLengths (attributedText, (float) w);
+        textLayout.createLayout (attributedText, (float) w);
     }
     else
     {
         attributedText.setJustification (Justification::topLeft);
-        textLayout.createLayoutWithBalancedLineLengths (attributedText, (float) w);
+        textLayout.createLayout (attributedText, (float) w);
         iconSpace = iconWidth;
     }
 
