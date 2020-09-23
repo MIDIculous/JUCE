@@ -83,6 +83,9 @@ public:
     //==============================================================================
     /** Changes the base width of the arrow. */
     void setArrowSize (float newSize);
+    
+    /** Enables or disables drag'n'drop of the box. */
+    void setDraggable(bool draggable);
 
     /** Updates the position and size of the box.
 
@@ -168,6 +171,10 @@ public:
     int getBorderSize() const noexcept;
     /** @internal */
     void lookAndFeelChanged() override;
+    /** @internal */
+    void mouseDown (const MouseEvent&) override;
+    /** @internal */
+    void mouseDrag (const MouseEvent&) override;
 
 private:
     //==============================================================================
@@ -176,6 +183,7 @@ private:
     Point<float> targetPoint;
     Rectangle<int> availableArea, targetArea;
     Image background;
+    std::unique_ptr<ComponentDragger> dragger;
     float arrowSize = 16.0f;
     bool dismissalMouseClicksAreAlwaysConsumed = false;
 

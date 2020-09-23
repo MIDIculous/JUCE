@@ -94,12 +94,30 @@ void CallOutBox::setArrowSize (const float newSize)
     refreshPath();
 }
 
+void CallOutBox::setDraggable(bool draggable)
+{
+    if (draggable != (dragger != nullptr))
+        dragger.reset(draggable ? new ComponentDragger() : nullptr);
+}
+
 int CallOutBox::getBorderSize() const noexcept
 {
     return jmax (getLookAndFeel().getCallOutBoxBorderSize (*this), (int) arrowSize);
 }
 
 void CallOutBox::lookAndFeelChanged() { resized(); repaint(); }
+
+void CallOutBox::mouseDown (const MouseEvent& e)
+{
+    if (dragger)
+        dragger->startDraggingComponent (this, e);
+}
+
+void CallOutBox::mouseDrag (const MouseEvent& e)
+{
+    if (dragger)
+        dragger->dragComponent (this, e, nullptr);
+}
 
 void CallOutBox::paint (Graphics& g)
 {
