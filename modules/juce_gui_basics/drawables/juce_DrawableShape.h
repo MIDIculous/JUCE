@@ -101,6 +101,8 @@ public:
     /** @internal */
     bool replaceColour (Colour originalColour, Colour replacementColour) override;
     /** @internal */
+    bool replaceColours(const Array<Colour>& originalColours, const Array<Colour>& replacementColours) override;
+    /** @internal */
     Path getOutlineAsPath() const override;
 
 protected:

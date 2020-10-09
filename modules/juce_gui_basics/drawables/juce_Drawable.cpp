@@ -152,6 +152,17 @@ bool Drawable::replaceColour (Colour original, Colour replacement)
     return changed;
 }
 
+bool Drawable::replaceColours(const Array<Colour>& originalColours, const Array<Colour>& replacementColours)
+{
+    bool changed = false;
+
+    for (auto* c : getChildren())
+        if (auto* d = dynamic_cast<Drawable*> (c))
+            changed = d->replaceColours (originalColours, replacementColours) || changed;
+
+    return changed;
+}
+
 //==============================================================================
 void Drawable::setOriginWithOriginalSize (Point<float> originWithinParent)
 {

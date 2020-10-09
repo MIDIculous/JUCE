@@ -185,6 +185,8 @@ public:
         return true if any instances of this colour were found.
     */
     virtual bool replaceColour (Colour originalColour, Colour replacementColour);
+    
+    virtual bool replaceColours(const Array<Colour>& originalColours, const Array<Colour>& replacementColours);
 
 protected:
     //==============================================================================

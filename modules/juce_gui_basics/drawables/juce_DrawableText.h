@@ -98,6 +98,8 @@ public:
     Path getOutlineAsPath() const override;
     /** @internal */
     bool replaceColour (Colour originalColour, Colour replacementColour) override;
+    /** @internal */
+    bool replaceColours(const Array<Colour>& originalColours, const Array<Colour>& replacementColours) override;
 
 private:
     //==============================================================================

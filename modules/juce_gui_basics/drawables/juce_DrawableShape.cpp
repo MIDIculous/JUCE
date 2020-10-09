@@ -171,6 +171,31 @@ bool DrawableShape::replaceColour (Colour original, Colour replacement)
     return changed1 || changed2;
 }
 
+bool DrawableShape::replaceColours(const Array<Colour>& originalColours, const Array<Colour>& replacementColours)
+{
+    if (originalColours.size() != replacementColours.size()) {
+        jassertfalse;
+        return false;
+    }
+    
+    bool changed = false;
+    for (int i = 0; i < originalColours.size(); i++) {
+        if (replaceColourInFill (mainFill,   originalColours[i], replacementColours[i])) {
+            changed = true;
+            break;
+        }
+    }
+    
+    for (int i = 0; i < originalColours.size(); i++) {
+        if (replaceColourInFill (strokeFill,   originalColours[i], replacementColours[i])) {
+            changed = true;
+            break;
+        }
+    }
+    
+    return changed;
+}
+
 Path DrawableShape::getOutlineAsPath() const
 {
     auto outline = isStrokeVisible() ? strokePath : path;

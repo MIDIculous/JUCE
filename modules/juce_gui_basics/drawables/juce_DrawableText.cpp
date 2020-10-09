@@ -208,4 +208,21 @@ bool DrawableText::replaceColour (Colour originalColour, Colour replacementColou
     return true;
 }
 
+bool DrawableText::replaceColours(const Array<Colour>& originalColours, const Array<Colour>& replacementColours)
+{
+    if (originalColours.size() != replacementColours.size()) {
+        jassertfalse;
+        return false;
+    }
+    
+    for (int i = 0; i < originalColours.size(); i++) {
+        if (colour == originalColours[i]) {
+            setColour (replacementColours[i]);
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 } // namespace juce
