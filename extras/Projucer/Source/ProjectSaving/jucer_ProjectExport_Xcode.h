@@ -2925,13 +2925,20 @@ private:
             XcodeTarget* xcodeTarget = nullptr;
             if (projectItem.isModuleCode() && projectItem.shouldBeCompiled())
                 xcodeTarget = getTargetOfType (project.getTargetTypeFromFilePath (projectItem.getFile(), false));
+            
+            auto compilerFlags = compilerFlagSchemesMap[projectItem.getCompilerFlagSchemeString()].get().toString();
+            const auto filePath = projectItem.getFilePath();
+            if (filePath.contains("juce_audio_plugin_client_VST2")
+                || filePath.contains("juce_audio_plugin_client_AU")
+                || filePath.contains("juce_audio_plugin_client_AAX"))
+                compilerFlags += "\n-fexceptions";
 
             return addFile (path, projectItem.shouldBeCompiled(),
                             projectItem.shouldBeAddedToBinaryResources(),
                             projectItem.shouldBeAddedToXcodeResources(),
                             projectItem.shouldInhibitWarnings(),
                             xcodeTarget,
-                            compilerFlagSchemesMap[projectItem.getCompilerFlagSchemeString()].get());
+                            compilerFlags);
         }
 
         return {};
