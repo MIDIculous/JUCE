@@ -405,6 +405,8 @@ public:
                 auto* globals = projectXml.createNewChildElement ("PropertyGroup");
                 globals->setAttribute ("Label", "Globals");
                 globals->createNewChildElement ("ProjectGuid")->addTextElement (getProjectGuid());
+                globals->createNewChildElement("UseNativeEnvironment")->addTextElement ("true");
+                globals->createNewChildElement("PreferredToolArchitecture")->addTextElement ("x64");
             }
 
             {
