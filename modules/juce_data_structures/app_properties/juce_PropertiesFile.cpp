@@ -346,7 +346,7 @@ void PropertiesFile::timerCallback()
 
 void PropertiesFile::propertyChanged()
 {
-    sendChangeMessage();
+    sendSynchronousChangeMessage();
     needsWriting = true;
 
     if (options.millisecondsBeforeSaving > 0)
