@@ -354,7 +354,7 @@ void Synthesiser::noteOff (const int midiChannel,
                 if (sound->appliesToNote (midiNoteNumber)
                      && sound->appliesToChannel (midiChannel))
                 {
-                    jassert (! voice->keyIsDown || voice->isSustainPedalDown() == sustainPedalsDown [midiChannel]);
+//                    jassert (! voice->keyIsDown || voice->isSustainPedalDown() == sustainPedalsDown [midiChannel]);
 
                     voice->setKeyDown (false);
 
