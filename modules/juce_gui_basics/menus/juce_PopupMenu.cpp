@@ -603,6 +603,7 @@ struct MenuWindow  : public Component
         return anyFocused;
     }
     
+    #if JUCE_IOS
     static bool isInLandscapeMode()
     {
         // Desktop::getCurrentOrientation() doesn't work properly in AUv3, this is a workaround to prevent menus from being misplaced.
@@ -615,6 +616,7 @@ struct MenuWindow  : public Component
 
         return (roundToInt(scale * sizeInPoints.width) != roundToInt(nativeSize.width));
     }
+    #endif
 
     //==============================================================================
     Rectangle<int> getParentArea (Point<int> targetPoint, Component* relativeTo = nullptr)
@@ -630,7 +632,7 @@ struct MenuWindow  : public Component
                                .totalArea; // on windows, don't stop the menu overlapping the taskbar
                               #endif
         
-        #if JUCE_IOS || JUCE_ANDROID
+        #if JUCE_IOS
         if (isInLandscapeMode())
             parentArea = Rectangle<int>(0, 0, parentArea.getHeight(), parentArea.getWidth());
         #endif
