@@ -602,6 +602,19 @@ struct MenuWindow  : public Component
 
         return anyFocused;
     }
+    
+    static bool isInLandscapeMode()
+    {
+        // Desktop::getCurrentOrientation() doesn't work properly in AUv3, this is a workaround to prevent menus from being misplaced.
+        // @see https://github.com/MIDIculous/Pure_Synth/issues/1294
+        
+        UIScreen* mainScreen = UIScreen.mainScreen;
+        const CGFloat scale = mainScreen.scale;
+        const CGSize nativeSize = mainScreen.currentMode.size;
+        const CGSize sizeInPoints = mainScreen.bounds.size;
+
+        return (roundToInt(scale * sizeInPoints.width) != roundToInt(nativeSize.width));
+    }
 
     //==============================================================================
     Rectangle<int> getParentArea (Point<int> targetPoint, Component* relativeTo = nullptr)
@@ -609,12 +622,18 @@ struct MenuWindow  : public Component
         if (relativeTo != nullptr)
             targetPoint = relativeTo->localPointToGlobal (targetPoint);
 
-        auto parentArea = Desktop::getInstance().getDisplays().findDisplayForPoint (targetPoint * scaleFactor)
+        auto& display = Desktop::getInstance().getDisplays().findDisplayForPoint (targetPoint * scaleFactor);
+        auto parentArea = display
                               #if JUCE_MAC || JUCE_ANDROID
                                .userArea;
                               #else
                                .totalArea; // on windows, don't stop the menu overlapping the taskbar
                               #endif
+        
+        #if JUCE_IOS || JUCE_ANDROID
+        if (isInLandscapeMode())
+            parentArea = Rectangle<int>(0, 0, parentArea.getHeight(), parentArea.getWidth());
+        #endif
 
         if (parentComponent == nullptr)
             return parentArea;
@@ -630,7 +649,7 @@ struct MenuWindow  : public Component
         auto parentArea = getParentArea (target.getCentre()) / scaleFactor;
 
         if (parentComponent != nullptr)
-            target = parentComponent->getLocalArea (nullptr, target).getIntersection (parentArea);
+            target = parentComponent->getLocalArea (componentAttachedTo.get(), target).getIntersection (parentArea);
 
         auto maxMenuHeight = parentArea.getHeight() - 24;
 
