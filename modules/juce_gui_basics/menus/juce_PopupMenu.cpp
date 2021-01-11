@@ -651,7 +651,7 @@ struct MenuWindow  : public Component
         auto parentArea = getParentArea (target.getCentre()) / scaleFactor;
 
         if (parentComponent != nullptr)
-            target = parentComponent->getLocalArea (componentAttachedTo.get(), target).getIntersection (parentArea);
+            target = parentComponent->getLocalArea (nullptr, target).getIntersection (parentArea);
 
         auto maxMenuHeight = parentArea.getHeight() - 24;
 
