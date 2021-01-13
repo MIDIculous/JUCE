@@ -38,7 +38,24 @@ static bool isUsingOldRotationMethod() noexcept
 
 static UIInterfaceOrientation getWindowOrientation()
 {
+    if (SystemStats::isRunningInAppExtensionSandbox()) {
+        jassert(!UIApplication.sharedApplication);
+        
+        UIScreen* mainScreen = UIScreen.mainScreen;
+        if (!mainScreen) {
+            jassertfalse;
+            return UIInterfaceOrientationPortrait;
+        }
+        
+        const CGSize size = mainScreen.bounds.size;
+        if (size.width > size.height)
+            return UIInterfaceOrientationLandscapeLeft;
+        
+        return UIInterfaceOrientationPortrait;
+    }
+    
     UIApplication* sharedApplication = [UIApplication sharedApplication];
+    jassert(sharedApplication);
 
    #if (defined (__IPHONE_13_0) && __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0)
     return [[[[sharedApplication windows] firstObject] windowScene] interfaceOrientation];

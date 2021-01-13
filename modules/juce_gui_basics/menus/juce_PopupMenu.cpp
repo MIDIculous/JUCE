@@ -606,15 +606,13 @@ struct MenuWindow  : public Component
     #if JUCE_IOS
     static bool isInLandscapeMode()
     {
-        // Desktop::getCurrentOrientation() doesn't work properly in AUv3, this is a workaround to prevent menus from being misplaced.
-        // @see https://github.com/MIDIculous/Pure_Synth/issues/1294
+        if (UIScreen* mainScreen = UIScreen.mainScreen) {
+            const CGSize size = mainScreen.bounds.size;
+            return (size.width > size.height);
+        }
         
-        UIScreen* mainScreen = UIScreen.mainScreen;
-        const CGFloat scale = mainScreen.scale;
-        const CGSize nativeSize = mainScreen.currentMode.size;
-        const CGSize sizeInPoints = mainScreen.bounds.size;
-
-        return (roundToInt(scale * sizeInPoints.width) != roundToInt(nativeSize.width));
+        jassertfalse;
+        return false;
     }
     #endif
 
@@ -633,8 +631,11 @@ struct MenuWindow  : public Component
                               #endif
         
         #if JUCE_IOS
-        if (isInLandscapeMode())
+        // When running as an AUv3, the orientation might be detected incorrectly by JUCE. Handle this here:
+        if (SystemStats::isRunningInAppExtensionSandbox()
+            && (isInLandscapeMode() != (parentArea.getWidth() > parentArea.getHeight()))) {
             parentArea = Rectangle<int>(0, 0, parentArea.getHeight(), parentArea.getWidth());
+        }
         #endif
 
         if (parentComponent == nullptr)

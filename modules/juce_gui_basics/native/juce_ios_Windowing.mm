@@ -746,10 +746,7 @@ double Desktop::getDefaultMasterScale()
 
 Desktop::DisplayOrientation Desktop::getCurrentOrientation() const
 {
-    UIInterfaceOrientation orientation = SystemStats::isRunningInAppExtensionSandbox() ? UIInterfaceOrientationPortrait
-                                                                                       : getWindowOrientation();
-
-    return Orientations::convertToJuce (orientation);
+    return Orientations::convertToJuce (getWindowOrientation());
 }
 
 void Displays::findDisplays (float masterScale)
