@@ -22,6 +22,8 @@
 
   ==============================================================================
 */
+
+#include <juce_core/system/juce_TargetPlatform.h>
 #include <juce_core/system/juce_CompilerWarnings.h>
 #include "../utility/juce_CheckSettingMacros.h"
 
@@ -1649,7 +1651,7 @@ public:
             if (activeUIs.contains (self))
                 shutdown (self);
 
-            sendSuperclassMessage (self, @selector (dealloc));
+            sendSuperclassMessage<void> (self, @selector (dealloc));
         }
 
         static void applicationWillTerminate (id self, SEL, NSNotification*)

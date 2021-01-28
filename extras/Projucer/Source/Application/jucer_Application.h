@@ -110,6 +110,7 @@ public:
 private:
     //==============================================================================
     void handleAsyncUpdate() override;
+    void doBasicApplicationSetup();
 
     void initCommandManager();
     bool initialiseLogger (const char* filePrefix);
