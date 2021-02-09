@@ -661,13 +661,18 @@ struct MenuWindow  : public Component
     {
         if (relativeTo != nullptr)
             targetPoint = relativeTo->localPointToGlobal (targetPoint);
+        
+        const auto* display = Desktop::getInstance().getDisplays().getDisplayForPoint(targetPoint * scaleFactor);
+        if (!display) {
+            jassertfalse;
+            return {};
+        }
 
-        auto& display = Desktop::getInstance().getDisplays().findDisplayForPoint (targetPoint * scaleFactor);
         auto parentArea = display
                               #if JUCE_MAC || JUCE_ANDROID
-                               .userArea;
+                               ->userArea;
                               #else
-                               .totalArea; // on windows, don't stop the menu overlapping the taskbar
+                               ->totalArea; // on windows, don't stop the menu overlapping the taskbar
                               #endif
         
         #if JUCE_IOS
