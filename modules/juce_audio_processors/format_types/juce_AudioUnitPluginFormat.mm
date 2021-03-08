@@ -2706,6 +2706,8 @@ void AudioUnitPluginFormat::createPluginInstance (const PluginDescription& desc,
                                                   PluginCreationCallback callback)
 {
     using namespace AudioUnitFormatHelpers;
+    
+    logIfVerbose("AudioUnitPluginFormat::createPluginInstance: " + desc.fileOrIdentifier);
 
     if (fileMightContainThisPluginType (desc.fileOrIdentifier))
     {
