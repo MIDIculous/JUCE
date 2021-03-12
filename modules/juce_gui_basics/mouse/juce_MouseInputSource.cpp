@@ -318,7 +318,10 @@ public:
 
         ++mouseEventCounter;
 
-        auto screenPos = newPeer.localToGlobal (positionWithinPeer);
+        // offscreenMousePos is checked by setScreenPos(), so we have to keep it intact.
+        auto screenPos = positionWithinPeer;
+        if (positionWithinPeer != MouseInputSource::offscreenMousePos)
+            screenPos = newPeer.localToGlobal (positionWithinPeer);
 
         if (isDragging() && newMods.isAnyMouseButtonDown())
         {
