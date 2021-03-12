@@ -68,9 +68,9 @@ LookAndFeel::~LookAndFeel()
        safe WeakReference to it, but it could cause some unexpected graphical behaviour,
        so it's advisable to clear up any references before destroying them!
     */
-    jassert (masterReference.getNumActiveWeakReferences() == 0
+    /* jassert (masterReference.getNumActiveWeakReferences() == 0
               || (masterReference.getNumActiveWeakReferences() == 1
-                   && this == &getDefaultLookAndFeel()));
+                   && this == &getDefaultLookAndFeel())); */
 }
 
 //==============================================================================
