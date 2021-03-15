@@ -466,7 +466,8 @@ void Button::mouseUp (const MouseEvent& e)
         if (lastStatePainted != buttonDown)
             flashButtonState();
 
-        internalClickCallback (e.mods, &e);
+        if (e.mouseWasClicked())
+            internalClickCallback (e.mods, &e);
     }
 }
 
