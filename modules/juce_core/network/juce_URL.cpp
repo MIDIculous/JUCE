@@ -695,10 +695,15 @@ std::unique_ptr<InputStream> URL::createInputStream (bool usePostCommand,
     {
        #if JUCE_IOS
         // We may need to refresh the embedded bookmark.
-        return std::make_unique<iOSFileStreamWrapper<FileInputStream>> (const_cast<URL&>(*this));
+        auto fileInputStream = std::make_unique<iOSFileStreamWrapper<FileInputStream>> (const_cast<URL&>(*this));
        #else
-        return getLocalFile().createInputStream();
+        auto fileInputStream = getLocalFile().createInputStream();
        #endif
+        
+        if (fileInputStream && fileInputStream->openedOk())
+            return fileInputStream;
+        
+        return nullptr;
     }
 
     auto wi = std::make_unique<WebInputStream> (*this, usePostCommand);
