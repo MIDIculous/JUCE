@@ -758,6 +758,14 @@ public:
                           bool asUnicode = false,
                           bool writeUnicodeHeaderBytes = false,
                           const char* lineEndings = "\r\n") const;
+    
+    /** Replaces the file's contents, by calling the given function.
+     
+        The function must return a bool, indicating whether the write was successful. The File passed to the function is empty, so the function can use File::appendData, File::appendText, etc.
+     
+        It first tries to use a TemporaryFile and atomically replace this file. If that fails on iOS, it writes to this file directly.
+     */
+    bool replaceContents(const std::function<bool(const File&)>& function) const;
 
     /** Attempts to scan the contents of this file and compare it to another file, returning
         true if this is possible and they match byte-for-byte.

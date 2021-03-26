@@ -761,10 +761,10 @@ bool File::replaceWithData (const void* const dataToWrite,
 {
     if (numberOfBytes == 0)
         return deleteFile();
-
-    TemporaryFile tempFile (*this, TemporaryFile::useHiddenFile);
-    tempFile.getFile().appendData (dataToWrite, numberOfBytes);
-    return tempFile.overwriteTargetFileWithTemporary();
+    
+    return replaceContents([&](const auto& fileToWrite) {
+        return fileToWrite.appendData (dataToWrite, numberOfBytes);
+    });
 }
 
 bool File::appendText (const String& text, bool asUnicode, bool writeHeaderBytes, const char* lineFeed) const
@@ -779,9 +779,52 @@ bool File::appendText (const String& text, bool asUnicode, bool writeHeaderBytes
 
 bool File::replaceWithText (const String& textToWrite, bool asUnicode, bool writeHeaderBytes, const char* lineFeed) const
 {
-    TemporaryFile tempFile (*this, TemporaryFile::useHiddenFile);
-    tempFile.getFile().appendText (textToWrite, asUnicode, writeHeaderBytes, lineFeed);
-    return tempFile.overwriteTargetFileWithTemporary();
+    return replaceContents([&](const auto& fileToWrite) {
+        return fileToWrite.appendText (textToWrite, asUnicode, writeHeaderBytes, lineFeed);
+    });
+}
+
+bool File::replaceContents(const std::function<bool(const File&)>& function) const
+{
+    const TemporaryFile tempFile (*this, TemporaryFile::useHiddenFile);
+    if (function(tempFile.getFile()) && tempFile.overwriteTargetFileWithTemporary())
+        return true;
+    
+#if !JUCE_IOS
+    return false;
+#endif
+    
+    // Using a temporary sibling file doesn't work on iOS when writing outside of the app sandbox. In this case, try writing to the destination file directly.
+    
+    // Try to create a backup of the current file contents, if it's reasonably small. In case something goes wrong.
+    MemoryBlock backup;
+    const auto size = getSize();
+    if (existsAsFile() && size > 0 && size <= 10 * 1024 * 1024)
+        loadFileAsData(backup);
+    
+    const auto truncate = [f = *this, size] {
+        if (size == 0)
+            return true;
+        
+        FileOutputStream outputStream(f, /* bufferSizeToUse: */ 16);
+        if (outputStream.failedToOpen() || outputStream.truncate().failed())
+            return false;
+        
+        outputStream.flush();
+        return true;
+    };
+    
+    if (!truncate())
+        return false;
+    
+    if (function(*this))
+        return true;
+    
+    // Try restoring the backup (if any):
+    if (backup.getSize() > 0 && truncate())
+        appendData(backup.getData(), backup.getSize());
+    
+    return false;
 }
 
 bool File::hasIdenticalContentTo (const File& other) const

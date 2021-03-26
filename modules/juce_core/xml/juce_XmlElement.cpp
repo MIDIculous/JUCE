@@ -406,10 +406,8 @@ void XmlElement::writeTo (OutputStream& output, const TextFormat& options) const
 
 bool XmlElement::writeTo (const File& destinationFile, const TextFormat& options) const
 {
-    TemporaryFile tempFile (destinationFile);
-
-    {
-        FileOutputStream out (tempFile.getFile());
+    return destinationFile.replaceContents([this, &options](const auto& fileToWrite) {
+        FileOutputStream out (fileToWrite);
 
         if (! out.openedOk())
             return false;
@@ -417,11 +415,8 @@ bool XmlElement::writeTo (const File& destinationFile, const TextFormat& options
         writeTo (out, options);
         out.flush(); // (called explicitly to force an fsync on posix)
 
-        if (out.getStatus().failed())
-            return false;
-    }
-
-    return tempFile.overwriteTargetFileWithTemporary();
+        return out.getStatus().wasOk();
+    });
 }
 
 String XmlElement::createDocument (StringRef dtdToUse, bool allOnOneLine, bool includeXmlHeader,
