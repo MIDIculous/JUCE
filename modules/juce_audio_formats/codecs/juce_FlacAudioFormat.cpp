@@ -281,6 +281,9 @@ public:
     }
 
     void useSamples (const FlacNamespace::FLAC__int32* const buffer[], int numSamples)
+#if JUCE_CLANG
+__attribute__((no_sanitize("shift-base")))
+#endif
     {
         if (scanningForLength)
         {

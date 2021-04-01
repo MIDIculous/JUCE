@@ -376,6 +376,9 @@ void FLAC__fixed_compute_residual(const FLAC__int32 data[], unsigned data_len, u
 }
 
 void FLAC__fixed_restore_signal(const FLAC__int32 residual[], unsigned data_len, unsigned order, FLAC__int32 data[])
+#if JUCE_CLANG
+__attribute__((no_sanitize("shift-base")))
+#endif
 {
 	int i, idata_len = (int)data_len;
 
