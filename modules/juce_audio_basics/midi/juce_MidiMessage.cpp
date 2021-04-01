@@ -1039,7 +1039,7 @@ double MidiMessage::getMidiNoteInHertz (const int noteNumber, const double frequ
 
 bool MidiMessage::isMidiNoteBlack (int noteNumber) noexcept
 {
-    return ((1 << (noteNumber % 12)) & 0x054a) != 0;
+    return ((1 << ((noteNumber % 12 + 12) % 12)) & 0x054a) != 0;
 }
 
 const char* MidiMessage::getGMInstrumentName (const int n)
