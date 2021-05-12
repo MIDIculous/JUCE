@@ -45,8 +45,6 @@ option(JUCE_COPY_PLUGIN_AFTER_BUILD
 set_property(GLOBAL PROPERTY JUCE_COPY_PLUGIN_AFTER_BUILD ${JUCE_COPY_PLUGIN_AFTER_BUILD})
 
 set(CMAKE_CXX_EXTENSIONS FALSE)
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # This option controls whether dummy targets are added to the build, where these targets contain all
 # of the source files for each JUCE module. If you're planning to use an IDE and want to be able to
