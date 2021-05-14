@@ -643,6 +643,8 @@ void MidiKeyboardComponent::resized()
                 scrollUp  ->setBounds (r.removeFromTop    (scrollButtonW));
             }
 
+            // This part prevents setLowestVisibleKey from working correctly, and it's unclear what it's actually for.
+            /*
             auto endOfLastKey = getKeyPos (rangeEnd).getEnd();
 
             float mousePositionVelocity;
@@ -653,7 +655,7 @@ void MidiKeyboardComponent::resized()
             {
                 firstKey = (float) jlimit (rangeStart, rangeEnd, lastStartKey);
                 sendChangeMessage();
-            }
+            } */
 
             xOffset = getKeyPos ((int) firstKey).getStart();
         }
@@ -776,7 +778,7 @@ void MidiKeyboardComponent::mouseMove (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu())
         return;
-    
+
     updateNoteUnderMouse (e, false);
 }
 
@@ -784,7 +786,7 @@ void MidiKeyboardComponent::mouseDrag (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu())
         return;
-    
+
     float mousePositionVelocity;
     auto newNote = xyToNote (e.position, mousePositionVelocity);
 
@@ -800,7 +802,7 @@ void MidiKeyboardComponent::mouseDown (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu())
         return;
-    
+
     float mousePositionVelocity;
     auto newNote = xyToNote (e.position, mousePositionVelocity);
 
@@ -812,7 +814,7 @@ void MidiKeyboardComponent::mouseUp (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu())
         return;
-    
+
     updateNoteUnderMouse (e, false);
 
     float mousePositionVelocity;
@@ -826,7 +828,7 @@ void MidiKeyboardComponent::mouseEnter (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu())
         return;
-    
+
     updateNoteUnderMouse (e, false);
 }
 
@@ -834,7 +836,7 @@ void MidiKeyboardComponent::mouseExit (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu())
         return;
-    
+
     updateNoteUnderMouse (e, false);
 }
 
@@ -842,7 +844,7 @@ void MidiKeyboardComponent::mouseWheelMove (const MouseEvent& e, const MouseWhee
 {
     if (e.mods.isPopupMenu())
         return;
-    
+
     auto amount = (orientation == horizontalKeyboard && wheel.deltaX != 0)
                        ? wheel.deltaX : (orientation == verticalKeyboardFacingLeft ? wheel.deltaY
                                                                                    : -wheel.deltaY);
