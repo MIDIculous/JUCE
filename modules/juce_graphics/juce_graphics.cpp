@@ -98,6 +98,10 @@
  #define JUCE_USING_COREIMAGE_LOADER 0
 #endif
 
+#if JUCE_MAC || JUCE_IOS
+#include <juce_core/native/juce_mac_CFHelpers.h>
+#endif
+
 #include "third_party/flat_hash_map.hpp"
 
 //==============================================================================
