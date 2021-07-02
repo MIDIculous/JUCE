@@ -45,7 +45,7 @@ public:
     static String getFormatName()                   { return "AudioUnit"; }
     String getName() const override                 { return getFormatName(); }
     bool canScanForPlugins() const override         { return true; }
-    bool isTrivialToScan() const override           { return false; }
+    bool isTrivialToScan() const override           { return true; }
 
     void findAllTypesForFile (OwnedArray<PluginDescription>&, const String& fileOrIdentifier) override;
     bool fileMightContainThisPluginType (const String& fileOrIdentifier) override;

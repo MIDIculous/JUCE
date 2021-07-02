@@ -310,6 +310,59 @@ namespace AudioUnitFormatHelpers
 
         return nullptr;
     }
+
+    static void fillInPluginDescription(PluginDescription& desc,
+                                        const AudioComponentDescription& componentDesc,
+                                        const String& pluginName,
+                                        const String& version,
+                                        const String& manufacturer)
+    {
+        desc.name = pluginName;
+        desc.descriptiveName = pluginName;
+        desc.fileOrIdentifier = AudioUnitFormatHelpers::createPluginIdentifier (componentDesc);
+        desc.uid = ((int) componentDesc.componentType)
+                    ^ ((int) componentDesc.componentSubType)
+                    ^ ((int) componentDesc.componentManufacturer);
+        desc.lastFileModTime = Time();
+        desc.lastInfoUpdateTime = Time::getCurrentTime();
+        desc.pluginFormatName = "AudioUnit";
+        desc.category = AudioUnitFormatHelpers::getCategory (componentDesc.componentType);
+        desc.manufacturerName = manufacturer;
+        desc.version = version;
+        desc.isInstrument = (componentDesc.componentType == kAudioUnitType_MusicDevice);
+    }
+
+    static Result getAudioComponentDescription(const String& fileOrIdentifier,
+                                               AudioComponentDescription& componentDesc,
+                                               AudioComponent& auComponent,
+                                               String& pluginName,
+                                               String& version,
+                                               String& manufacturer)
+    {
+        String errMessage = NEEDS_TRANS ("Cannot find AudioUnit from description");
+
+        if ((! getComponentDescFromIdentifier (fileOrIdentifier, componentDesc, pluginName, version, manufacturer))
+              && (! getComponentDescFromFile (fileOrIdentifier, componentDesc, pluginName, version, manufacturer)))
+        {
+            logIfVerbose("AudioUnitPluginFormat getAudioComponentDescription ERROR: getComponentDescFromIdentifier or getComponentDescFromFile returned false.");
+            return Result::fail(errMessage);
+        }
+
+        if ((auComponent = AudioComponentFindNext (nullptr, &componentDesc)) == nullptr)
+        {
+            logIfVerbose("AudioUnitPluginFormat getAudioComponentDescription ERROR: AudioComponentFindNext returned nullptr.");
+            return Result::fail(errMessage);
+        }
+
+        const auto result = AudioComponentGetDescription (auComponent, &componentDesc);
+        if (result != noErr)
+        {
+            logIfVerbose("AudioUnitPluginFormat getAudioComponentDescription ERROR: AudioComponentGetDescription returned error code:" + String(result));
+            return Result::fail(errMessage);
+        }
+
+        return Result::ok();
+    }
 }
 
 //==============================================================================
@@ -851,21 +904,9 @@ public:
 
     void fillInPluginDescription (PluginDescription& desc) const override
     {
-        desc.name = pluginName;
-        desc.descriptiveName = pluginName;
-        desc.fileOrIdentifier = AudioUnitFormatHelpers::createPluginIdentifier (componentDesc);
-        desc.uid = ((int) componentDesc.componentType)
-                    ^ ((int) componentDesc.componentSubType)
-                    ^ ((int) componentDesc.componentManufacturer);
-        desc.lastFileModTime = Time();
-        desc.lastInfoUpdateTime = Time::getCurrentTime();
-        desc.pluginFormatName = "AudioUnit";
-        desc.category = AudioUnitFormatHelpers::getCategory (componentDesc.componentType);
-        desc.manufacturerName = manufacturer;
-        desc.version = version;
+        AudioUnitFormatHelpers::fillInPluginDescription(desc, componentDesc, pluginName, version, manufacturer);
         desc.numInputChannels = getTotalNumInputChannels();
         desc.numOutputChannels = getTotalNumOutputChannels();
-        desc.isInstrument = (componentDesc.componentType == kAudioUnitType_MusicDevice);
     }
 
     void* getPlatformSpecificData() override             { return audioUnit; }
@@ -2657,38 +2698,30 @@ void AudioUnitPluginFormat::findAllTypesForFile (OwnedArray<PluginDescription>& 
                                                  const String& fileOrIdentifier)
 {
     logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + ")...");
-    
+
     if (! fileMightContainThisPluginType (fileOrIdentifier)) {
         logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + ") ERROR: fileMightContainThisPluginType returned false.");
         return;
     }
 
-    PluginDescription desc;
-    desc.fileOrIdentifier = fileOrIdentifier;
-    desc.uid = 0;
+    AudioComponentDescription componentDesc;
+    AudioComponent auComponent;
+    String pluginName;
+    String version;
+    String manufacturer;
 
-    if (MessageManager::getInstance()->isThisTheMessageThread()
-         && requiresUnblockedMessageThreadDuringCreation (desc)) {
-        logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + ") ERROR: Called on Message Thread, but plugin requires an unblocked message thread.");
+    const auto result = AudioUnitFormatHelpers::getAudioComponentDescription(fileOrIdentifier, componentDesc, auComponent, pluginName, version, manufacturer);
+    if (result.failed()) {
+        logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + ") ERROR: getAudioComponentDescription returned error: " + result.getErrorMessage());
         return;
     }
 
-    try
-    {
-        logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + "): Calling createInstanceFromDescription()...");
-        auto createdInstance = createInstanceFromDescription (desc, 44100.0, 512);
-        logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + "): createInstanceFromDescription() returned.");
+    auto desc = std::make_unique<PluginDescription>();
+    desc->fileOrIdentifier = fileOrIdentifier;
+    desc->uid = 0;
+    AudioUnitFormatHelpers::fillInPluginDescription(*desc, componentDesc, pluginName, version, manufacturer);
 
-        if (auto auInstance = dynamic_cast<AudioUnitPluginInstance*> (createdInstance.get()))
-            results.add (new PluginDescription (auInstance->getPluginDescription()));
-        else
-            logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + ") ERROR: createInstanceFromDescription() did not return an AudioUnitPluginInstance.");
-    }
-    catch (const std::exception& e)
-    {
-        logIfVerbose("AudioUnitPluginFormat::findAllTypesForFile(" + fileOrIdentifier + ") ERROR: Exception thrown while calling createInstanceFromDescription(): " + e.what());
-        // crashed while loading...
-    }
+    results.add(std::move(desc));
 }
 
 void AudioUnitPluginFormat::createPluginInstance (const PluginDescription& desc,
@@ -2696,39 +2729,19 @@ void AudioUnitPluginFormat::createPluginInstance (const PluginDescription& desc,
                                                   PluginCreationCallback callback)
 {
     using namespace AudioUnitFormatHelpers;
-    
     logIfVerbose("AudioUnitPluginFormat::createPluginInstance: " + desc.fileOrIdentifier);
 
     if (fileMightContainThisPluginType (desc.fileOrIdentifier))
     {
         logIfVerbose("AudioUnitPluginFormat::createPluginInstance: fileMightContainThisPluginType returned true.");
-        
+
         String pluginName, version, manufacturer;
         AudioComponentDescription componentDesc;
         AudioComponent auComponent;
-        String errMessage = NEEDS_TRANS ("Cannot find AudioUnit from description");
 
-        if ((! getComponentDescFromIdentifier (desc.fileOrIdentifier, componentDesc, pluginName, version, manufacturer))
-              && (! getComponentDescFromFile (desc.fileOrIdentifier, componentDesc, pluginName, version, manufacturer)))
-        {
-            logIfVerbose("AudioUnitPluginFormat::createPluginInstance ERROR: getComponentDescFromIdentifier or getComponentDescFromFile returned false.");
-            
-            callback (nullptr, errMessage);
-            return;
-        }
-
-        if ((auComponent = AudioComponentFindNext (nullptr, &componentDesc)) == nullptr)
-        {
-            logIfVerbose("AudioUnitPluginFormat::createPluginInstance ERROR: AudioComponentFindNext returned nullptr.");
-            callback (nullptr, errMessage);
-            return;
-        }
-
-        const auto result = AudioComponentGetDescription (auComponent, &componentDesc);
-        if (result != noErr)
-        {
-            logIfVerbose("AudioUnitPluginFormat::createPluginInstance ERROR: AudioComponentGetDescription returned error code:" + String(result));
-            callback (nullptr, errMessage);
+        const auto result = getAudioComponentDescription(desc.fileOrIdentifier, componentDesc, auComponent, pluginName, version, manufacturer);
+        if (result.failed()) {
+            callback(nullptr, result.getErrorMessage());
             return;
         }
 
