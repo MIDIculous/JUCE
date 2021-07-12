@@ -289,9 +289,11 @@ static void sendScreenBoundsUpdate (JuceUIViewController* c)
 static bool isKioskModeView (JuceUIViewController* c)
 {
     JuceUIView* juceView = (JuceUIView*) [c view];
-    jassert (juceView != nil && juceView->owner != nullptr);
-
-    return Desktop::getInstance().getKioskModeComponent() == &(juceView->owner->getComponent());
+    if (juceView != nil && juceView->owner != nullptr)
+        return Desktop::getInstance().getKioskModeComponent() == &(juceView->owner->getComponent());
+    
+    jassertfalse;
+    return false;
 }
 
 MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
