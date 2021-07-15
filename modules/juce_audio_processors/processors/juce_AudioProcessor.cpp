@@ -1562,13 +1562,18 @@ String AudioProcessorParameter::getCurrentValueAsText() const
 
 StringArray AudioProcessorParameter::getAllValueStrings() const
 {
-    if (isDiscrete() && valueStrings.isEmpty())
-    {
-        auto maxIndex = getNumSteps() - 1;
+    if (!isDiscrete() || !valueStrings.isEmpty())
+        return valueStrings;
+    
+    // Protect against freeze when hosting plugins such as Atom Piano Roll, which has a "Clip Index" parameter where numSteps is 2147483647.
+    const auto numSteps = getNumSteps();
+    if (numSteps > 1024)
+        return valueStrings;
+    
+    const auto maxIndex = numSteps - 1;
 
-        for (int i = 0; i < getNumSteps(); ++i)
-            valueStrings.add (getText ((float) i / (float) maxIndex, 1024));
-    }
+    for (int i = 0; i < numSteps; ++i)
+        valueStrings.add (getText ((float) i / (float) maxIndex, 1024));
 
     return valueStrings;
 }
