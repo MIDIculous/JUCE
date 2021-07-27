@@ -217,7 +217,7 @@ public:
         You can call this method for full control over the item that is added, or use the other
         addItem helper methods if you want to pass arguments rather than creating an Item object.
     */
-    void addItem (Item newItem);
+    void addItem (Item newItem, int indexToInsertAt = -1);
 
     /** Adds an item to the menu with an action callback. */
     void addItem (String itemText,
@@ -405,7 +405,7 @@ public:
         one, so your code can be quite free and easy about adding these, and it'll
         always look ok.
     */
-    void addSeparator();
+    void addSeparator(int indexToInsertAt = -1);
 
     /** Adds a non-clickable text item to the menu.
         This is a bold-font items which can be used as a header to separate the items

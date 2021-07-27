@@ -1605,7 +1605,7 @@ PopupMenu::Item&& PopupMenu::Item::setImage (std::unique_ptr<Drawable> newImage)
     return std::move (*this);
 }
 
-void PopupMenu::addItem (Item newItem)
+void PopupMenu::addItem (Item newItem, int indexToInsertAt)
 {
     // An ID of 0 is used as a return value to indicate that the user
     // didn't pick anything, so you shouldn't use it as the ID for an item..
@@ -1613,7 +1613,7 @@ void PopupMenu::addItem (Item newItem)
               || newItem.isSeparator || newItem.isSectionHeader
               || newItem.subMenu != nullptr);
 
-    items.add (std::move (newItem));
+    items.insert (indexToInsertAt, std::move (newItem));
 }
 
 void PopupMenu::addItem (String itemText, std::function<void()> action)
@@ -1760,13 +1760,13 @@ void PopupMenu::addSubMenu (String subMenuName, PopupMenu subMenu, bool isActive
     addItem (std::move (i));
 }
 
-void PopupMenu::addSeparator()
+void PopupMenu::addSeparator(int indexToInsertAt)
 {
     if (items.size() > 0 && ! items.getLast().isSeparator)
     {
         Item i;
         i.isSeparator = true;
-        addItem (std::move (i));
+        addItem (std::move (i), indexToInsertAt);
     }
 }
 
