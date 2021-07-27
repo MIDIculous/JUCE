@@ -653,7 +653,7 @@ const float MouseInputSource::invalidRotation = 0.0f;
 const float MouseInputSource::invalidTiltX = 0.0f;
 const float MouseInputSource::invalidTiltY = 0.0f;
 
-const Point<float> MouseInputSource::offscreenMousePos { -10.0f, -10.0f };
+const Point<float> MouseInputSource::offscreenMousePos { NAN, NAN };
 
 // Deprecated method
 bool MouseInputSource::hasMouseMovedSignificantlySincePressed() const noexcept  { return pimpl->hasMouseMovedSignificantlySincePressed(); }
