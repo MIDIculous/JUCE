@@ -1218,8 +1218,7 @@ private:
         auto localMousePos = window.getLocalPoint (nullptr, globalMousePos);
         auto timeNow = Time::getMillisecondCounter();
 
-        if (timeNow > window.timeEnteredCurrentChildComp + 100
-             && window.reallyContains (localMousePos, true)
+        if (window.reallyContains (localMousePos, true)
              && window.currentChild != nullptr
              && ! (window.disableMouseMoves || window.isSubMenuVisible()))
         {
