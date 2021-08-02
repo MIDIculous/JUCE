@@ -405,7 +405,7 @@ bool MidiFile::readFrom (InputStream& sourceStream, bool createMatchingNoteOffs)
         d += chunkSize;
     }
 
-    return size == 0;
+    return true;
 }
 
 void MidiFile::readNextTrack (const uint8* data, int size, bool createMatchingNoteOffs)
