@@ -104,9 +104,14 @@ namespace FIR
                     size = newSize;
                 }
 
-                for (size_t i = 0; i < size; ++i)
-                    fifo[i] = SampleType {0};
+                clearBuffers();
             }
+        }
+
+        void clearBuffers()
+        {
+            for (size_t i = 0; i < size; ++i)
+                fifo[i] = SampleType {0};
         }
 
         //==============================================================================
