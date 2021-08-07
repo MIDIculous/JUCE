@@ -43,7 +43,7 @@ class JUCE_API  MidiKeyboardState
 public:
     //==============================================================================
     MidiKeyboardState();
-    ~MidiKeyboardState();
+    virtual ~MidiKeyboardState();
 
     //==============================================================================
     /** Resets the state of the object.
