@@ -369,7 +369,7 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPhone)
         return UIRectEdgeAll;
     
-    return [super preferredScreenEdgesDeferringSystemGestures];
+    return (UIRectEdgeLeft | UIRectEdgeBottom | UIRectEdgeRight);
 }
 
 - (void) viewDidLoad
