@@ -128,10 +128,16 @@ bool ComboBox::isItemEnabled (int itemId) const noexcept
 
 void ComboBox::changeItemText (int itemId, const String& newText)
 {
-    if (auto* item = getItemForId (itemId))
+    const int selectedId = getSelectedId();
+    if (auto* item = getItemForId (itemId)) {
         item->text = newText;
-    else
+
+        if (itemId == selectedId)
+            setSelectedId(selectedId, sendNotificationSync);
+    }
+    else {
         jassertfalse;
+    }
 }
 
 void ComboBox::clear (const NotificationType notification)
