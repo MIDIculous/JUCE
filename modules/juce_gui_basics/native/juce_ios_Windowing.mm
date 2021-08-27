@@ -23,6 +23,8 @@
   ==============================================================================
 */
 
+extern void* juce_GetSKPaymentTransactionObserver();
+
 namespace juce
 {
     extern bool isIOSAppActive;
@@ -46,10 +48,11 @@ namespace juce
     UIBackgroundTaskIdentifier appSuspendTask;
 }
 
+@property (strong, nonatomic) NSObject<SKPaymentTransactionObserver> *transactionObserver;
 @property (strong, nonatomic) UIWindow *window;
 - (id) init;
 - (void) dealloc;
-- (void) applicationDidFinishLaunching: (UIApplication*) application;
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary<UIApplicationLaunchOptionsKey, id> *)launchOptions;
 - (void) applicationWillTerminate: (UIApplication*) application;
 - (void) applicationDidEnterBackground: (UIApplication*) application;
 - (void) applicationWillEnterForeground: (UIApplication*) application;
@@ -99,7 +102,7 @@ namespace juce
    #if JUCE_PUSH_NOTIFICATIONS && defined (__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
     [UNUserNotificationCenter currentNotificationCenter].delegate = self;
    #endif
-
+    
     return self;
 }
 
@@ -108,9 +111,17 @@ namespace juce
     [super dealloc];
 }
 
-- (void) applicationDidFinishLaunching: (UIApplication*) application
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary<UIApplicationLaunchOptionsKey, id> *)launchOptions
 {
-    ignoreUnused (application);
+    ignoreUnused (application, launchOptions);
+    
+    _transactionObserver = (NSObject<SKPaymentTransactionObserver>*)juce_GetSKPaymentTransactionObserver();
+    jassert(self.transactionObserver);
+    jassert([self.transactionObserver isKindOfClass:NSObject.class]);
+    jassert([self.transactionObserver conformsToProtocol:@protocol(SKPaymentTransactionObserver)]);
+    
+    [SKPaymentQueue.defaultQueue addTransactionObserver:self.transactionObserver];
+    
     initialiseJuce_GUI();
 
     if (auto* app = JUCEApplicationBase::createInstance())
@@ -122,11 +133,19 @@ namespace juce
     {
         jassertfalse; // you must supply an application object for an iOS app!
     }
+    
+    return YES;
 }
 
 - (void) applicationWillTerminate: (UIApplication*) application
 {
     ignoreUnused (application);
+    
+    if (self.transactionObserver)
+        [SKPaymentQueue.defaultQueue removeTransactionObserver:self.transactionObserver];
+    else
+        jassertfalse;
+    
     JUCEApplicationBase::appWillTerminateByForce();
 }
 

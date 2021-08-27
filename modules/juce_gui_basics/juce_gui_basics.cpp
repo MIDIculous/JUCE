@@ -59,6 +59,7 @@
   #import <UserNotifications/UserNotifications.h>
  #endif
 
+ #import <StoreKit/StoreKit.h>
  #import <UIKit/UIActivityViewController.h>
 
 //==============================================================================
