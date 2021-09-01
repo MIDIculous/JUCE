@@ -39,7 +39,7 @@
   license:            ISC
 
   dependencies:       juce_audio_basics, juce_events
-  OSXFrameworks:      CoreAudio CoreMIDI AudioToolbox
+  OSXFrameworks:      CoreAudio CoreMIDI AudioToolbox CoreAudioKit
   iOSFrameworks:      CoreAudio CoreMIDI AudioToolbox AVFoundation
   linuxPackages:      alsa
   mingwLibs:          winmm
