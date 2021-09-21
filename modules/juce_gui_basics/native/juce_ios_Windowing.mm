@@ -472,10 +472,15 @@ class iOSMessageBox
 public:
     iOSMessageBox (const String& title, const String& message,
                    NSString* button1, NSString* button2, NSString* button3,
-                   ModalComponentManager::Callback* cb, const bool async)
+                   ModalComponentManager::Callback* cb, const bool async,
+                   Component* associatedComponent)
         : result (0), resultReceived (false), callback (cb), isAsync (async)
     {
-        if (currentlyFocusedPeer != nullptr)
+        auto* peer = currentlyFocusedPeer;
+        if (!peer && associatedComponent)
+            peer = dynamic_cast<UIViewComponentPeer*>(associatedComponent->getPeer());
+        
+        if (peer)
         {
             UIAlertController* alert = [UIAlertController alertControllerWithTitle: juceStringToNS (title)
                                                                            message: juceStringToNS (message)
@@ -484,9 +489,9 @@ public:
             addButton (alert, button2, 1);
             addButton (alert, button3, 2);
 
-            [currentlyFocusedPeer->controller presentViewController: alert
-                                                           animated: YES
-                                                         completion: nil];
+            [peer->controller presentViewController: alert
+                                           animated: YES
+                                         completion: nil];
         }
         else
         {
@@ -542,11 +547,11 @@ private:
 #if JUCE_MODAL_LOOPS_PERMITTED
 void JUCE_CALLTYPE NativeMessageBox::showMessageBox (AlertWindow::AlertIconType /*iconType*/,
                                                      const String& title, const String& message,
-                                                     Component* /*associatedComponent*/)
+                                                     Component* associatedComponent)
 {
     JUCE_AUTORELEASEPOOL
     {
-        iOSMessageBox mb (title, message, @"OK", nil, nil, nullptr, false);
+        iOSMessageBox mb (title, message, @"OK", nil, nil, nullptr, false, associatedComponent);
         ignoreUnused (mb.getResult());
     }
 }
@@ -554,19 +559,19 @@ void JUCE_CALLTYPE NativeMessageBox::showMessageBox (AlertWindow::AlertIconType 
 
 void JUCE_CALLTYPE NativeMessageBox::showMessageBoxAsync (AlertWindow::AlertIconType /*iconType*/,
                                                           const String& title, const String& message,
-                                                          Component* /*associatedComponent*/,
+                                                          Component* associatedComponent,
                                                           ModalComponentManager::Callback* callback)
 {
-    new iOSMessageBox (title, message, @"OK", nil, nil, callback, true);
+    new iOSMessageBox (title, message, @"OK", nil, nil, callback, true, associatedComponent);
 }
 
 bool JUCE_CALLTYPE NativeMessageBox::showOkCancelBox (AlertWindow::AlertIconType /*iconType*/,
                                                       const String& title, const String& message,
-                                                      Component* /*associatedComponent*/,
+                                                      Component* associatedComponent,
                                                       ModalComponentManager::Callback* callback)
 {
     std::unique_ptr<iOSMessageBox> mb (new iOSMessageBox (title, message, @"Cancel", @"OK",
-                                                          nil, callback, callback != nullptr));
+                                                          nil, callback, callback != nullptr, associatedComponent));
 
     if (callback == nullptr)
         return mb->getResult() == 1;
@@ -580,10 +585,10 @@ int JUCE_CALLTYPE NativeMessageBox::showYesNoCancelBox (AlertWindow::AlertIconTy
                                                         const String& button1Text,
                                                         const String& button2Text,
                                                         const String& button3Text,
-                                                        Component* /*associatedComponent*/,
+                                                        Component* associatedComponent,
                                                         ModalComponentManager::Callback* callback)
 {
-    std::unique_ptr<iOSMessageBox> mb (new iOSMessageBox (title, message, juceStringToNS(button3Text), juceStringToNS(button1Text), juceStringToNS(button2Text), callback, callback != nullptr));
+    std::unique_ptr<iOSMessageBox> mb (new iOSMessageBox (title, message, juceStringToNS(button3Text), juceStringToNS(button1Text), juceStringToNS(button2Text), callback, callback != nullptr, associatedComponent));
 
     if (callback == nullptr)
         return mb->getResult();
@@ -594,10 +599,10 @@ int JUCE_CALLTYPE NativeMessageBox::showYesNoCancelBox (AlertWindow::AlertIconTy
 
 int JUCE_CALLTYPE NativeMessageBox::showYesNoBox (AlertWindow::AlertIconType /*iconType*/,
                                                   const String& title, const String& message,
-                                                  Component* /*associatedComponent*/,
+                                                  Component* associatedComponent,
                                                   ModalComponentManager::Callback* callback)
 {
-    std::unique_ptr<iOSMessageBox> mb (new iOSMessageBox (title, message, @"No", @"Yes", nil, callback, callback != nullptr));
+    std::unique_ptr<iOSMessageBox> mb (new iOSMessageBox (title, message, @"No", @"Yes", nil, callback, callback != nullptr, associatedComponent));
 
     if (callback == nullptr)
         return mb->getResult();
