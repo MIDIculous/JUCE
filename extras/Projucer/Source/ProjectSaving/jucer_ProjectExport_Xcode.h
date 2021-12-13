@@ -144,6 +144,7 @@ public:
           embeddedFrameworksValue                      (settings, Ids::embeddedFrameworks,                      getUndoManager()),
           postbuildCommandValue                        (settings, Ids::postbuildCommand,                        getUndoManager()),
           prebuildCommandValue                         (settings, Ids::prebuildCommand,                         getUndoManager()),
+          embedAUv3AppExtensionValue                   (settings, Ids::embedAUv3AppExtension, getUndoManager(), true),
           duplicateAppExResourcesFolderValue           (settings, Ids::duplicateAppExResourcesFolder,           getUndoManager(), true),
           iosDeviceFamilyValue                         (settings, Ids::iosDeviceFamily,                         getUndoManager(), "1,2"),
           iPhoneScreenOrientationValue                 (settings, Ids::iPhoneScreenOrientation,                 getUndoManager(), getDefaultScreenOrientations(), ","),
@@ -222,6 +223,8 @@ public:
 
     String getPostBuildScript() const                       { return postbuildCommandValue.get(); }
     String getPreBuildScript() const                        { return prebuildCommandValue.get(); }
+    
+    bool shouldEmbedAUv3AppExtension() const                { return embedAUv3AppExtensionValue.get(); }
 
     bool shouldDuplicateAppExResourcesFolder() const        { return duplicateAppExResourcesFolderValue.get(); }
 
@@ -358,9 +361,12 @@ public:
                    "This way you can specify them for OS X and iOS separately, and modify the content of the resource folders "
                    "without re-saving the Projucer project.");
 
-        if (getProject().isAudioPluginProject())
+        if (getProject().isAudioPluginProject()) {
+            props.add (new ChoicePropertyComponent (embedAUv3AppExtensionValue, "Embed AUv3 App Extension"),
+                       "Disable this to prevent embedding the AUv3 .appex into the .app/Contents/PlugIns/ folder.");
             props.add (new ChoicePropertyComponent (duplicateAppExResourcesFolderValue, "Add Duplicate Resources Folder to App Extension"),
                        "Disable this to prevent the Projucer from creating a duplicate resources folder for AUv3 app extensions.");
+        }
 
         if (iOS)
         {
@@ -1191,10 +1197,12 @@ public:
             if (! owner.project.isAudioPluginProject())
                 return;
 
-            if (type == XcodeTarget::StandalonePlugIn) // depends on AUv3 and shared code
+            if (type == XcodeTarget::StandalonePlugIn) // depends on shared code, may depend on AUv3
             {
-                if (auto* auv3Target = owner.getTargetOfType (XcodeTarget::AudioUnitv3PlugIn))
-                    dependencyIDs.add (auv3Target->addDependencyFor (*this));
+                if (owner.shouldEmbedAUv3AppExtension()) {
+                    if (auto* auv3Target = owner.getTargetOfType (XcodeTarget::AudioUnitv3PlugIn))
+                        dependencyIDs.add (auv3Target->addDependencyFor (*this));
+                }
 
                 if (auto* sharedCodeTarget = owner.getTargetOfType (XcodeTarget::SharedCodeTarget))
                     dependencyIDs.add (sharedCodeTarget->addDependencyFor (*this));
@@ -2216,7 +2224,7 @@ private:
 
             target->addShellScriptBuildPhase ("Post-build script", getPostBuildScript());
 
-            if (project.isAudioPluginProject() && project.shouldBuildAUv3()
+            if (project.isAudioPluginProject() && project.shouldBuildAUv3() && shouldEmbedAUv3AppExtension()
                 && project.shouldBuildStandalonePlugin() && target->type == XcodeTarget::StandalonePlugIn)
                 embedAppExtension();
 
@@ -3488,7 +3496,7 @@ private:
                      validArchsValue,
                      extraFrameworksValue, frameworkSearchPathsValue, extraCustomFrameworksValue, embeddedFrameworksValue,
                      postbuildCommandValue, prebuildCommandValue,
-                     duplicateAppExResourcesFolderValue, iosDeviceFamilyValue, iPhoneScreenOrientationValue,
+                     embedAUv3AppExtensionValue, duplicateAppExResourcesFolderValue, iosDeviceFamilyValue, iPhoneScreenOrientationValue,
                      iPadScreenOrientationValue, customXcodeResourceFoldersValue, customXcassetsFolderValue,
                      appSandboxValue, appSandboxInheritanceValue, appSandboxOptionsValue,
                      hardenedRuntimeValue, hardenedRuntimeOptionsValue,
