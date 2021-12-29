@@ -3090,7 +3090,7 @@ private:
         if (! File::isAbsolutePath (path) && ! isRelativePath)
             path = "System/Library/Frameworks/" + path;
 
-        if (! path.endsWithIgnoreCase (".framework"))
+        if (! path.endsWithIgnoreCase (".framework") && ! path.endsWithIgnoreCase(".xcframework"))
             path << ".framework";
 
         auto fileRefID = createFileRefID (path);
@@ -3104,7 +3104,7 @@ private:
 
     String addCustomFramework (String frameworkPath) const
     {
-        if (! frameworkPath.endsWithIgnoreCase (".framework"))
+        if (! frameworkPath.endsWithIgnoreCase (".framework") && ! frameworkPath.endsWithIgnoreCase(".xcframework"))
             frameworkPath << ".framework";
 
         auto fileRefID = createFileRefID (frameworkPath);
