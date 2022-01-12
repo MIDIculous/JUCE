@@ -124,8 +124,13 @@ private:
 JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 #define JUCE_SYSTEMAUDIOVOL_IMPLEMENTED 1
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120000
 float JUCE_CALLTYPE SystemAudioVolume::getGain()              { return SystemVol (kAudioHardwareServiceDeviceProperty_VirtualMainVolume).getGain(); }
 bool  JUCE_CALLTYPE SystemAudioVolume::setGain (float gain)   { return SystemVol (kAudioHardwareServiceDeviceProperty_VirtualMainVolume).setGain (gain); }
+#else
+float JUCE_CALLTYPE SystemAudioVolume::getGain()              { return SystemVol (kAudioHardwareServiceDeviceProperty_VirtualMasterVolume).getGain(); }
+bool  JUCE_CALLTYPE SystemAudioVolume::setGain (float gain)   { return SystemVol (kAudioHardwareServiceDeviceProperty_VirtualMasterVolume).setGain (gain); }
+#endif
 bool  JUCE_CALLTYPE SystemAudioVolume::isMuted()              { return SystemVol (kAudioDevicePropertyMute).isMuted(); }
 bool  JUCE_CALLTYPE SystemAudioVolume::setMuted (bool mute)   { return SystemVol (kAudioDevicePropertyMute).setMuted (mute); }
 
@@ -845,7 +850,7 @@ private:
     {
         if (device)
             static_cast<CoreAudioInternal*> (device)->audioCallback (inInputData, outOutputData);
-        
+
         return noErr;
     }
 
@@ -854,7 +859,7 @@ private:
     {
         if (!inClientData)
             return noErr;
-        
+
         auto intern = static_cast<CoreAudioInternal*> (inClientData);
 
         switch (pa->mSelector)
