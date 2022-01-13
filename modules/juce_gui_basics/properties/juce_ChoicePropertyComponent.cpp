@@ -213,7 +213,7 @@ ChoicePropertyComponent::~ChoicePropertyComponent()
 //==============================================================================
 void ChoicePropertyComponent::initialiseComboBox (const Value& v)
 {
-    if (v != Value())
+    if (!valueWithDefault || v != Value())
     {
         comboBox.setSelectedId (v.getValue(), dontSendNotification);
         comboBox.getSelectedIdAsValue().referTo (v);
