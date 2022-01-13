@@ -763,6 +763,7 @@ bool File::replaceWithData (const void* const dataToWrite,
         return deleteFile();
     
     return replaceContents([&](const auto& fileToWrite) {
+        fileToWrite.create();
         return fileToWrite.appendData (dataToWrite, numberOfBytes);
     });
 }
@@ -780,6 +781,7 @@ bool File::appendText (const String& text, bool asUnicode, bool writeHeaderBytes
 bool File::replaceWithText (const String& textToWrite, bool asUnicode, bool writeHeaderBytes, const char* lineFeed) const
 {
     return replaceContents([&](const auto& fileToWrite) {
+        fileToWrite.create();
         return fileToWrite.appendText (textToWrite, asUnicode, writeHeaderBytes, lineFeed);
     });
 }
