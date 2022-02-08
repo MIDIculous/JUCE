@@ -225,4 +225,25 @@ bool DrawableText::replaceColours(const Array<Colour>& originalColours, const Ar
     return false;
 }
 
+//==============================================================================
+std::unique_ptr<AccessibilityHandler> DrawableText::createAccessibilityHandler()
+{
+    class DrawableTextAccessibilityHandler  : public AccessibilityHandler
+    {
+    public:
+        DrawableTextAccessibilityHandler (DrawableText& drawableTextToWrap)
+            : AccessibilityHandler (drawableTextToWrap, AccessibilityRole::staticText),
+              drawableText (drawableTextToWrap)
+        {
+        }
+
+        String getTitle() const override  { return drawableText.getText(); }
+
+    private:
+        DrawableText& drawableText;
+    };
+
+    return std::make_unique<DrawableTextAccessibilityHandler> (*this);
+}
+
 } // namespace juce

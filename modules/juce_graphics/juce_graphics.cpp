@@ -67,15 +67,13 @@
   #include <cstdio>
  #endif
 
- #include <unordered_map>
-
  JUCE_END_IGNORE_WARNINGS_MSVC
 
 #elif JUCE_IOS
  #import <QuartzCore/QuartzCore.h>
  #import <CoreText/CoreText.h>
 
-#elif JUCE_LINUX
+#elif JUCE_LINUX || JUCE_BSD
  #ifndef JUCE_USE_FREETYPE
   #define JUCE_USE_FREETYPE 1
  #endif
@@ -96,10 +94,6 @@
  #define JUCE_USING_COREIMAGE_LOADER 1
 #else
  #define JUCE_USING_COREIMAGE_LOADER 0
-#endif
-
-#if JUCE_MAC || JUCE_IOS
-#include <juce_core/native/juce_mac_CFHelpers.h>
 #endif
 
 #include "third_party/flat_hash_map.hpp"
@@ -136,6 +130,10 @@
 #include "effects/juce_DropShadowEffect.cpp"
 #include "effects/juce_GlowEffect.cpp"
 
+#if JUCE_UNIT_TESTS
+ #include "geometry/juce_Rectangle_test.cpp"
+#endif
+
 #if JUCE_USE_FREETYPE
  #include "native/juce_freetype_Fonts.cpp"
 #endif
@@ -155,7 +153,7 @@
   #include "native/juce_win32_Direct2DGraphicsContext.cpp"
  #endif
 
-#elif JUCE_LINUX
+#elif JUCE_LINUX || JUCE_BSD
  #include "native/juce_linux_Fonts.cpp"
  #include "native/juce_linux_IconHelpers.cpp"
 

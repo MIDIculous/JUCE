@@ -49,7 +49,7 @@ public:
         auto bounds = getLocalBounds();
 
         bounds = bounds.removeFromRight (bounds.getHeight());
-        
+
         Path ellipse;
         ellipse.addEllipse (bounds.toFloat());
         
@@ -60,6 +60,11 @@ public:
 
     void mouseUp (const MouseEvent&) override
     {
+        triggerClick();
+    }
+
+    void triggerClick()
+    {
         if (interactive)
         {
             PopupMenu menu;
@@ -67,6 +72,15 @@ public:
 
             menu.showMenuAsync (PopupMenu::Options().withTargetComponent (this));
         }
+    }
+
+    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override
+    {
+        return interactive ? std::make_unique<AccessibilityHandler> (*this,
+                                                                     AccessibilityRole::button,
+                                                                     AccessibilityActions().addAction (AccessibilityActionType::press,
+                                                                                                       [this] { triggerClick(); }))
+                           : nullptr;
     }
 
 private:

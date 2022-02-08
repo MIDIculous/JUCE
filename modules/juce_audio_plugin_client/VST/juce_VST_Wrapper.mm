@@ -35,7 +35,6 @@
 
 #include "../utility/juce_IncludeSystemHeaders.h"
 #include "../utility/juce_IncludeModuleHeaders.h"
-#include "../utility/juce_FakeMouseMoveGenerator.h"
 #include "../utility/juce_CarbonVisibility.h"
 
 //==============================================================================
@@ -209,11 +208,11 @@ void detachComponentFromWindowRefVST (Component* comp, void* window, bool isNSVi
 
             removeWindowHidingHooks (comp);
 
-            HIViewRef dummyView = (HIViewRef) (void*) (pointer_sized_int)
-                                    comp->getProperties() ["dummyViewRef"].toString().getHexValue64();
+            CFUniquePtr<HIViewRef> dummyView ((HIViewRef) (void*) (pointer_sized_int)
+                                                comp->getProperties() ["dummyViewRef"].toString().getHexValue64());
 
-            if (HIViewIsValid (dummyView))
-                CFRelease (dummyView);
+            if (HIViewIsValid (dummyView.get()))
+                dummyView = nullptr;
 
             NSWindow* hostWindow = (NSWindow*) window;
             NSView* pluginView = (NSView*) comp->getWindowHandle();

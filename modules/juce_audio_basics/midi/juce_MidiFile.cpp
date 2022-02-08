@@ -264,7 +264,6 @@ namespace MidiFileHelpers
 
 //==============================================================================
 MidiFile::MidiFile()  : timeFormat ((short) (unsigned short) 0xe728) {}
-MidiFile::~MidiFile() {}
 
 MidiFile::MidiFile (const MidiFile& other)  : timeFormat (other.timeFormat)
 {
@@ -356,7 +355,9 @@ double MidiFile::getLastTimestamp() const
 }
 
 //==============================================================================
-bool MidiFile::readFrom (InputStream& sourceStream, bool createMatchingNoteOffs)
+bool MidiFile::readFrom (InputStream& sourceStream,
+                         bool createMatchingNoteOffs,
+                         int* fileType)
 {
     clear();
     MemoryBlock data;
@@ -404,6 +405,11 @@ bool MidiFile::readFrom (InputStream& sourceStream, bool createMatchingNoteOffs)
         size -= chunkSize;
         d += chunkSize;
     }
+
+    const auto successful = (size == 0);
+
+    if (successful && fileType != nullptr)
+        *fileType = header.fileType;
 
     return true;
 }
@@ -778,7 +784,9 @@ struct MidiFileTest  : public UnitTest
         MemoryInputStream is (os.getData(), os.getDataSize(), false);
         MidiFile mf;
 
-        if (mf.readFrom (is))
+        int fileType = 0;
+
+        if (mf.readFrom (is, true, &fileType))
             return mf;
 
         return {};
