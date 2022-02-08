@@ -1052,7 +1052,7 @@ void AudioDeviceManager::removeMidiInputDeviceCallback (const String& identifier
     {
         auto& mc = midiCallbacks.getReference (i);
 
-        if (mc.callback == callbackToRemove && mc.deviceIdentifier == identifier)
+        if (mc.callback == callbackToRemove && (identifier.isEmpty() || mc.deviceIdentifier == identifier))
         {
             const ScopedLock sl (midiCallbackLock);
             midiCallbacks.remove (i);
