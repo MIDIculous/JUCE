@@ -1585,6 +1585,9 @@ public:
 
             if (installPath.startsWith ("~"))
                 installPath = installPath.replace ("~", "$(HOME)");
+            
+            if (! owner.embeddedFrameworkIDs.isEmpty())
+                s.set ("LD_RUNPATH_SEARCH_PATHS", "\"$(inherited) @loader_path/Frameworks @loader_path/../Frameworks @executable_path/Frameworks @executable_path/../Frameworks\"");
 
             if (installPath.isNotEmpty())
             {
@@ -1592,9 +1595,6 @@ public:
 
                 if (type == Target::SharedCodeTarget)
                     s.set ("SKIP_INSTALL", "YES");
-
-                if (! owner.embeddedFrameworkIDs.isEmpty())
-                    s.set ("LD_RUNPATH_SEARCH_PATHS", "\"$(inherited) @executable_path/Frameworks @executable_path/../Frameworks\"");
 
                 if (xcodeCopyToProductInstallPathAfterBuild)
                 {
