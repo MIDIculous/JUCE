@@ -322,9 +322,9 @@ namespace AudioUnitFormatHelpers
         desc.name = pluginName;
         desc.descriptiveName = pluginName;
         desc.fileOrIdentifier = AudioUnitFormatHelpers::createPluginIdentifier (componentDesc);
-        desc.uid = ((int) componentDesc.componentType)
-                    ^ ((int) componentDesc.componentSubType)
-                    ^ ((int) componentDesc.componentManufacturer);
+        desc.uniqueId = desc.deprecatedUid = ((int) componentDesc.componentType)
+                                           ^ ((int) componentDesc.componentSubType)
+                                           ^ ((int) componentDesc.componentManufacturer);
         desc.lastFileModTime = Time();
         desc.lastInfoUpdateTime = Time::getCurrentTime();
         desc.pluginFormatName = "AudioUnit";
@@ -2671,7 +2671,7 @@ void AudioUnitPluginFormat::findAllTypesForFile (OwnedArray<PluginDescription>& 
 
     auto desc = std::make_unique<PluginDescription>();
     desc->fileOrIdentifier = fileOrIdentifier;
-    desc->uid = 0;
+    desc->uniqueId = desc->deprecatedUid = 0;
     AudioUnitFormatHelpers::fillInPluginDescription(*desc, componentDesc, pluginName, version, manufacturer);
 
     results.add(std::move(desc));
