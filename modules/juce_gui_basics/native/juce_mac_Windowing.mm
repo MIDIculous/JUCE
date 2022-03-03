@@ -180,9 +180,9 @@ int JUCE_CALLTYPE NativeMessageBox::showYesNoCancelBox (MessageBoxIconType iconT
                          .withIconType (iconType)
                          .withTitle (title)
                          .withMessage (message)
-                         .withButton (TRANS("Yes"))
-                         .withButton (TRANS("No"))
-                         .withButton (TRANS("Cancel")),
+                         .withButton (button1Text.isNotEmpty() ? button1Text : TRANS("Yes"))
+                         .withButton (button2Text.isNotEmpty() ? button2Text : TRANS("No"))
+                         .withButton (button3Text.isNotEmpty() ? button3Text : TRANS("Cancel")),
                        callback, AlertWindowMappings::yesNoCancel);
 }
 
