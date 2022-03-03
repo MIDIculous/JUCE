@@ -255,6 +255,7 @@ void ComponentBoundsConstrainer::checkBounds (Rectangle<int>& bounds,
         {
             bounds.setWidth (roundToInt (bounds.getHeight() * aspectRatio));
 
+            const auto maxW = jmin(this->maxW, limits.getRight() - bounds.getX());
             if (bounds.getWidth() > maxW || bounds.getWidth() < minW)
             {
                 bounds.setWidth (jlimit (minW, maxW, bounds.getWidth()));
@@ -265,6 +266,7 @@ void ComponentBoundsConstrainer::checkBounds (Rectangle<int>& bounds,
         {
             bounds.setHeight (roundToInt (bounds.getWidth() / aspectRatio));
 
+            const auto maxH = jmin(this->maxH, limits.getBottom() - bounds.getY());
             if (bounds.getHeight() > maxH || bounds.getHeight() < minH)
             {
                 bounds.setHeight (jlimit (minH, maxH, bounds.getHeight()));
