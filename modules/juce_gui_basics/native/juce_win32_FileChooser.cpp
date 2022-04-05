@@ -194,29 +194,29 @@ private:
             return false;
 
         PIDLIST_ABSOLUTE pidl = {};
+        bool hasPIDList = SUCCEEDED (SHParseDisplayName (initialPath.toWideCharPointer(), nullptr, &pidl, SFGAO_FOLDER, nullptr));
 
-        if (FAILED (SHParseDisplayName (initialPath.toWideCharPointer(), nullptr, &pidl, SFGAO_FOLDER, nullptr)))
+        if (!hasPIDList)
         {
             LPWSTR ptr = nullptr;
             auto result = SHGetKnownFolderPath (FOLDERID_Desktop, 0, nullptr, &ptr);
             std::unique_ptr<WCHAR, FreeLPWSTR> desktopPath (ptr);
 
-            if (FAILED (result))
-                return false;
-
-            if (FAILED (SHParseDisplayName (desktopPath.get(), nullptr, &pidl, SFGAO_FOLDER, nullptr)))
-                return false;
+            if (SUCCEEDED (result) && SUCCEEDED (SHParseDisplayName (desktopPath.get(), nullptr, &pidl, SFGAO_FOLDER, nullptr)))
+                hasPIDList = true;
         }
 
-        const auto item = [&]
-        {
-            ComSmartPtr<IShellItem> ptr;
-            SHCreateShellItem (nullptr, nullptr, pidl, ptr.resetAndGetPointerAddress());
-            return ptr;
-        }();
-
-        if (item == nullptr || FAILED (dialog.SetFolder (item)))
-            return false;
+        if (hasPIDList) {
+            const auto item = [&]
+            {
+                ComSmartPtr<IShellItem> ptr;
+                SHCreateShellItem (nullptr, nullptr, pidl, ptr.resetAndGetPointerAddress());
+                return ptr;
+            }();
+            
+            if (item == nullptr || FAILED (dialog.SetFolder (item)))
+                return false;
+        }
 
         String filename (files.getData());
 
