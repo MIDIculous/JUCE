@@ -2009,6 +2009,7 @@ FLAC__bool frame_sync_(FLAC__StreamDecoder *decoder)
 	return true;
 }
 
+__attribute__((no_sanitize("integer")))
 FLAC__bool read_frame_(FLAC__StreamDecoder *decoder, FLAC__bool *got_a_frame, FLAC__bool do_full_decode)
 {
 	unsigned channel;
