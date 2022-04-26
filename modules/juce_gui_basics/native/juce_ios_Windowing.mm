@@ -477,8 +477,10 @@ public:
           shouldDeleteThis (deleteOnCompletion)
     {
         auto* peer = currentlyFocusedPeer;
-        if (!peer && associatedComponent)
-            peer = dynamic_cast<UIViewComponentPeer*>(associatedComponent->getPeer());
+        if (!peer) {
+            if (auto* associatedComponent = opts.getAssociatedComponent())
+                peer = dynamic_cast<UIViewComponentPeer*>(associatedComponent->getPeer());
+        }
         
         if (peer)
         {
