@@ -1037,7 +1037,7 @@ ValueTree ValueTree::fromXml (const XmlElement& xml)
     }
 
     // ValueTrees don't have any equivalent to XML text elements!
-    jassertfalse;
+    // jassertfalse;
     return {};
 }
 
