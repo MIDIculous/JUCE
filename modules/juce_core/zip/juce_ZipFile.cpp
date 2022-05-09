@@ -417,11 +417,6 @@ Result ZipFile::uncompressEntry (int index, const File& targetDirectory, bool sh
     if (entryPath.endsWithChar ('/') || entryPath.endsWithChar ('\\'))
         return targetFile.createDirectory(); // (entry is a directory, not a file)
 
-    std::unique_ptr<InputStream> in (createStreamForEntry (index));
-
-    if (in == nullptr)
-        return Result::fail ("Failed to open the zip file for reading");
-
     if (targetFile.exists())
     {
         if (! shouldOverwriteFiles)
@@ -433,6 +428,11 @@ Result ZipFile::uncompressEntry (int index, const File& targetDirectory, bool sh
 
     if (! targetFile.getParentDirectory().createDirectory())
         return Result::fail ("Failed to create target folder: " + targetFile.getParentDirectory().getFullPathName());
+
+    std::unique_ptr<InputStream> in (createStreamForEntry (index));
+
+    if (in == nullptr)
+        return Result::fail ("Failed to open the zip file for reading");
 
     if (zei->entry.isSymbolicLink)
     {
