@@ -162,7 +162,8 @@ public:
         @returns success if the file is successfully unzipped
     */
     Result uncompressTo (const File& targetDirectory,
-                         bool shouldOverwriteFiles = true);
+                         bool shouldOverwriteFiles = true,
+                         bool* filesWereUncompressed = nullptr);
 
     /** Uncompresses one of the entries from the zip file.
 
@@ -177,7 +178,8 @@ public:
     */
     Result uncompressEntry (int index,
                             const File& targetDirectory,
-                            bool shouldOverwriteFiles = true);
+                            bool shouldOverwriteFiles = true,
+                            bool* filesWereUncompressed = nullptr);
 
 
     //==============================================================================

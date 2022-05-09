@@ -386,11 +386,12 @@ void ZipFile::init()
 }
 
 Result ZipFile::uncompressTo (const File& targetDirectory,
-                              const bool shouldOverwriteFiles)
+                              const bool shouldOverwriteFiles,
+                              bool* filesWereUncompressedPointer)
 {
     for (int i = 0; i < entries.size(); ++i)
     {
-        auto result = uncompressEntry (i, targetDirectory, shouldOverwriteFiles);
+        auto result = uncompressEntry (i, targetDirectory, shouldOverwriteFiles, filesWereUncompressedPointer);
 
         if (result.failed())
             return result;
@@ -399,7 +400,7 @@ Result ZipFile::uncompressTo (const File& targetDirectory,
     return Result::ok();
 }
 
-Result ZipFile::uncompressEntry (int index, const File& targetDirectory, bool shouldOverwriteFiles)
+Result ZipFile::uncompressEntry (int index, const File& targetDirectory, bool shouldOverwriteFiles, bool* filesWereUncompressedPointer)
 {
     auto* zei = entries.getUnchecked (index);
 
@@ -414,8 +415,14 @@ Result ZipFile::uncompressEntry (int index, const File& targetDirectory, bool sh
 
     auto targetFile = targetDirectory.getChildFile (entryPath);
 
-    if (entryPath.endsWithChar ('/') || entryPath.endsWithChar ('\\'))
-        return targetFile.createDirectory(); // (entry is a directory, not a file)
+    if (entryPath.endsWithChar ('/') || entryPath.endsWithChar ('\\')) {
+        const bool existedAlready = targetFile.isDirectory();
+        const auto result = targetFile.createDirectory(); // (entry is a directory, not a file)
+        if (!existedAlready && filesWereUncompressedPointer)
+            *filesWereUncompressedPointer = result.wasOk();
+
+        return result;
+    }
 
     if (targetFile.exists())
     {
@@ -446,15 +453,18 @@ Result ZipFile::uncompressEntry (int index, const File& targetDirectory, bool sh
     {
         FileOutputStream out (targetFile);
 
-        if (out.failedToOpen())
+        if (out.failedToOpen() || !out.writeFromInputStream(*in, -1))
             return Result::fail ("Failed to write to target file: " + targetFile.getFullPathName());
 
-        out << *in;
+        out.flush();
     }
 
     targetFile.setCreationTime (zei->entry.fileTime);
     targetFile.setLastModificationTime (zei->entry.fileTime);
     targetFile.setLastAccessTime (zei->entry.fileTime);
+
+    if (filesWereUncompressedPointer)
+        *filesWereUncompressedPointer = true;
 
     return Result::ok();
 }
