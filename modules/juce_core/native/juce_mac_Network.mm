@@ -450,11 +450,19 @@ public:
 
         startThread();
 
+        const auto* parentThread = Thread::getCurrentThread();
+        jassert(parentThread);
+
         while (isThreadRunning() && ! initialised)
         {
             if (listener != nullptr)
                 if (! listener->postDataSendProgress (inputStream, (int) latestTotalBytes, (int) [[request HTTPBody] length]))
                     return false;
+
+            if (parentThread && parentThread->threadShouldExit()) {
+                cancel();
+                return false;
+            }
 
             Thread::sleep (1);
         }
