@@ -89,7 +89,7 @@ private:
     friend struct OverlayComp;
     Component::SafePointer<Component> unlockingOverlay;
 
-    void buttonClicked (Button*) override;
+    void buttonClicked (Button*, const MouseEvent*) override;
     void attemptRegistration();
     void showBubbleMessage (const String&, Component&);
 

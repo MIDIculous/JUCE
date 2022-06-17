@@ -126,7 +126,7 @@ struct OnlineUnlockForm::OverlayComp  : public Component,
             f.dismiss();
     }
 
-    void buttonClicked (Button* button) override
+    void buttonClicked (Button* button, const MouseEvent*) override
     {
         if (button == cancelButton.get())
         {
@@ -279,7 +279,7 @@ void OnlineUnlockForm::showBubbleMessage (const String& text, Component& target)
                     false); // deleteSelfAfterUse
 }
 
-void OnlineUnlockForm::buttonClicked (Button* b)
+void OnlineUnlockForm::buttonClicked (Button* b, const MouseEvent*)
 {
     if (b == &registerButton)
         attemptRegistration();
