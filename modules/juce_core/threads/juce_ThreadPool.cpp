@@ -123,7 +123,7 @@ void ThreadPool::stopThreads()
         t->signalThreadShouldExit();
 
     for (auto* t : threads)
-        t->stopThread (500);
+        t->stopThread (5000);
 }
 
 void ThreadPool::addJob (ThreadPoolJob* job, bool deleteJobWhenFinished)
