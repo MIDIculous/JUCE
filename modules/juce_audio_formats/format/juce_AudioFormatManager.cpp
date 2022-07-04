@@ -129,7 +129,8 @@ AudioFormatReader* AudioFormatManager::createReaderFor (const File& file)
                 if (auto* r = af->createReaderFor (in.release(), true))
                     return r;
 
-    return nullptr;
+    // This handles the case when the file doesn't have the right (or any) extension. It tries to read the file anyway and fails if the header doesn't match the format, etc.
+    return createReaderFor(std::make_unique<FileInputStream>(file));
 }
 
 AudioFormatReader* AudioFormatManager::createReaderFor (std::unique_ptr<InputStream> audioFileStream)
