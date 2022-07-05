@@ -614,10 +614,17 @@ ValueTree::ValueTree (const Identifier& type)  : object (new ValueTree::SharedOb
 ValueTree::ValueTree (const Identifier& type,
                       std::initializer_list<NamedValueSet::NamedValue> properties,
                       std::initializer_list<ValueTree> subTrees)
-    : ValueTree (type)
+    : ValueTree (type, NamedValueSet(std::move(properties)), Array<ValueTree>(std::move(subTrees)))
 {
-    object->properties = NamedValueSet (std::move (properties));
+}
 
+ValueTree::ValueTree (const Identifier& type,
+                      NamedValueSet properties,
+                      const Array<ValueTree>& subTrees)
+: ValueTree (type)
+{
+    object->properties = std::move (properties);
+    
     for (auto& tree : subTrees)
         addChild (tree, -1, nullptr);
 }

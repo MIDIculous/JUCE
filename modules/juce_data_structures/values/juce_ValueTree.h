@@ -129,6 +129,10 @@ public:
     ValueTree (const Identifier& type,
                std::initializer_list<NamedValueSet::NamedValue> properties,
                std::initializer_list<ValueTree> subTrees = {});
+    
+    ValueTree (const Identifier& type,
+               NamedValueSet properties,
+               const Array<ValueTree>& subTrees = {});
 
     /** Creates a reference to another ValueTree. */
     ValueTree (const ValueTree&) noexcept;
