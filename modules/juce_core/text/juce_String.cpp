@@ -1399,12 +1399,26 @@ String String::replaceCharacters (StringRef charactersToReplace, StringRef chara
 //==============================================================================
 bool String::startsWith (StringRef other) const noexcept
 {
-    return text.compareUpTo (other.text, other.length()) == 0;
+    auto a = text;
+    auto b = other.text;
+    while (!b.isEmpty()) {
+        if (a.isEmpty() || a.getAndAdvance() != b.getAndAdvance())
+            return false;
+    }
+    
+    return true;
 }
 
 bool String::startsWithIgnoreCase (StringRef other) const noexcept
 {
-    return text.compareIgnoreCaseUpTo (other.text, other.length()) == 0;
+    auto a = text;
+    auto b = other.text;
+    while (!b.isEmpty()) {
+        if (a.isEmpty() || CharacterFunctions::compareIgnoreCase(a.getAndAdvance(), b.getAndAdvance()) != 0)
+            return false;
+    }
+    
+    return true;
 }
 
 bool String::startsWithChar (const juce_wchar character) const noexcept
