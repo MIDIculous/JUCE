@@ -592,6 +592,7 @@ private:
     int totalItems = 0, rowHeight = 22, minimumRowWidth = 0;
     int outlineThickness = 0;
     int lastRowSelected = -1;
+    bool needsLayout = false;
     bool multipleSelection = false, alwaysFlipSelection = false, hasDoneInitialUpdate = false, selectOnMouseDown = true;
 
     std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;

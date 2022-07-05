@@ -584,6 +584,13 @@ void ListBox::paintOverChildren (Graphics& g)
 
 void ListBox::resized()
 {
+    if (!isVisible()) {
+        needsLayout = true;
+        return;
+    }
+    
+    needsLayout = false;
+    
     viewport->setBoundsInset (BorderSize<int> (outlineThickness + (headerComponent != nullptr ? headerComponent->getHeight() : 0),
                                                outlineThickness, outlineThickness, outlineThickness));
 
@@ -594,6 +601,9 @@ void ListBox::resized()
 
 void ListBox::visibilityChanged()
 {
+    if (needsLayout && isVisible())
+        resized();
+    
     viewport->updateVisibleArea (true);
 }
 
