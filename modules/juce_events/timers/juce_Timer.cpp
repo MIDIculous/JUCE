@@ -157,7 +157,7 @@ public:
     }
 
     static TimerThread* instance;
-    static LockType lock;
+    LockType lock;
 
 private:
     struct TimerCountdown
@@ -309,7 +309,6 @@ private:
 };
 
 Timer::TimerThread* Timer::TimerThread::instance = nullptr;
-Timer::TimerThread::LockType Timer::TimerThread::lock;
 
 //==============================================================================
 Timer::Timer() noexcept {}
@@ -334,7 +333,10 @@ void Timer::startTimer (int interval) noexcept
     // running, then you're not going to get any timer callbacks!
     JUCE_ASSERT_MESSAGE_MANAGER_EXISTS
 
-    const TimerThread::LockType::ScopedLockType sl (TimerThread::lock);
+    if (!TimerThread::instance)
+        return;
+
+    const TimerThread::LockType::ScopedLockType sl (TimerThread::instance->lock);
 
     bool wasStopped = (timerPeriodMs == 0);
     timerPeriodMs = jmax (1, interval);
@@ -355,7 +357,10 @@ void Timer::startTimerHz (int timerFrequencyHz) noexcept
 
 void Timer::stopTimer() noexcept
 {
-    const TimerThread::LockType::ScopedLockType sl (TimerThread::lock);
+    if (!TimerThread::instance)
+        return;
+
+    const TimerThread::LockType::ScopedLockType sl (TimerThread::instance->lock);
 
     if (timerPeriodMs > 0)
     {
