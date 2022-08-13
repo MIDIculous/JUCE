@@ -157,7 +157,19 @@ public:
     }
 
     static TimerThread* instance;
-    LockType lock;
+
+    static LockType* getLock(bool createInstanceIfNeeded)
+    {
+        if (instance != nullptr)
+            return &instance->lock;
+
+        if (createInstanceIfNeeded) {
+            instance = new TimerThread();
+            return &instance->lock;
+        }
+
+        return nullptr;
+    }
 
 private:
     struct TimerCountdown
@@ -166,6 +178,7 @@ private:
         int countdownMs;
     };
 
+    LockType lock;
     std::vector<TimerCountdown> timers;
 
     WaitableEvent callbackArrived;
@@ -333,10 +346,13 @@ void Timer::startTimer (int interval) noexcept
     // running, then you're not going to get any timer callbacks!
     JUCE_ASSERT_MESSAGE_MANAGER_EXISTS
 
-    if (!TimerThread::instance)
+    auto* lock = TimerThread::getLock(/* createInstanceIfNeeded: */ true);
+    if (!lock) {
+        jassertfalse;
         return;
+    }
 
-    const TimerThread::LockType::ScopedLockType sl (TimerThread::instance->lock);
+    const TimerThread::LockType::ScopedLockType sl (*lock);
 
     bool wasStopped = (timerPeriodMs == 0);
     timerPeriodMs = jmax (1, interval);
@@ -357,10 +373,11 @@ void Timer::startTimerHz (int timerFrequencyHz) noexcept
 
 void Timer::stopTimer() noexcept
 {
-    if (!TimerThread::instance)
+    auto* lock = TimerThread::getLock(/* createInstanceIfNeeded: */ false);
+    if (!lock)
         return;
 
-    const TimerThread::LockType::ScopedLockType sl (TimerThread::instance->lock);
+    const TimerThread::LockType::ScopedLockType sl (*lock);
 
     if (timerPeriodMs > 0)
     {
@@ -372,7 +389,7 @@ void Timer::stopTimer() noexcept
 void JUCE_CALLTYPE Timer::callPendingTimersSynchronously()
 {
     JUCE_ASSERT_MESSAGE_THREAD
-    
+
     if (TimerThread::instance != nullptr)
         TimerThread::instance->callTimersSynchronously();
 }
