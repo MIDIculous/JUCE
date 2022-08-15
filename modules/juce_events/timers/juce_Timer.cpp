@@ -32,19 +32,29 @@ public:
 
     TimerThread()  : Thread ("JUCE Timer")
     {
+        Logger::writeToLog("TimerThread() enter. this=" + String::formatted("%p", this) + ", instance=" + String::formatted("%p", instance));
         timers.reserve (32);
         triggerAsyncUpdate();
+        Logger::writeToLog("TimerThread() exit. this=" + String::formatted("%p", this) + ", instance=" + String::formatted("%p", instance));
     }
 
     ~TimerThread() override
     {
+        Logger::writeToLog("~TimerThread() enter. this=" + String::formatted("%p", this) + ", instance=" + String::formatted("%p", instance));
         signalThreadShouldExit();
         callbackArrived.signal();
         stopThread (4000);
         jassert (instance == this || instance == nullptr);
 
-        if (instance == this)
+        if (instance == this) {
+            Logger::writeToLog("~TimerThread() instance == this. Setting to nullptr...");
             instance = nullptr;
+        }
+        else {
+            Logger::writeToLog("~TimerThread() instance != this. THIS SHOULD NOT HAPPEN.");
+        }
+
+        Logger::writeToLog("~TimerThread() exit. this=" + String::formatted("%p", this) + ", instance=" + String::formatted("%p", instance));
     }
 
     void run() override
