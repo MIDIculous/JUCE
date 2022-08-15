@@ -199,8 +199,12 @@ private:
     {
         // Trying to add a timer that's already here - shouldn't get to this point,
         // so if you get this assertion, let me know!
-        jassert (std::none_of (timers.begin(), timers.end(),
-                               [t] (TimerCountdown i) { return i.timer == t; }));
+        const bool alreadyThere = std::any_of (timers.begin(), timers.end(),
+                                               [t] (TimerCountdown i) { return i.timer == t; });
+        if (alreadyThere) {
+            jassertfalse;
+            return;
+        }
 
         auto pos = timers.size();
 
@@ -212,11 +216,22 @@ private:
 
     void removeTimer (Timer* t)
     {
-        auto pos = t->positionInQueue;
-        auto lastIndex = timers.size() - 1;
-
-        jassert (pos <= lastIndex);
-        jassert (timers[pos].timer == t);
+        if (timers.empty())
+            return;
+        
+        const auto pos = t->positionInQueue;
+        if (pos >= timers.size())
+            return;
+        
+        const auto lastIndex = timers.size() - 1;
+        if (pos > lastIndex) {
+            jassertfalse;
+            return;
+        }
+        if (timers[pos].timer != t) {
+            jassertfalse;
+            return;
+        }
 
         for (auto i = pos; i < lastIndex; ++i)
         {
@@ -229,10 +244,14 @@ private:
 
     void resetTimerCounter (Timer* t) noexcept
     {
-        auto pos = t->positionInQueue;
-
-        jassert (pos < timers.size());
-        jassert (timers[pos].timer == t);
+        if (timers.empty())
+            return;
+        
+        const auto pos = t->positionInQueue;
+        if (pos >= timers.size())
+            return;
+        if (timers[pos].timer != t)
+            return;
 
         auto lastCountdown = timers[pos].countdownMs;
         auto newCountdown = t->timerPeriodMs;
@@ -252,9 +271,10 @@ private:
 
     void shuffleTimerBackInQueue (size_t pos)
     {
-        auto numTimers = timers.size();
-
-        if (pos < numTimers - 1)
+        if (timers.empty())
+            return;
+        
+        if (pos < timers.size() - 1)
         {
             auto t = timers[pos];
 
@@ -262,13 +282,18 @@ private:
             {
                 auto next = pos + 1;
 
-                if (next == numTimers || timers[next].countdownMs >= t.countdownMs)
+                if (next >= timers.size() || timers[next].countdownMs >= t.countdownMs)
                     break;
 
                 timers[pos] = timers[next];
                 timers[pos].timer->positionInQueue = pos;
 
                 ++pos;
+            }
+            
+            if (pos >= timers.size()) {
+                jassertfalse;
+                return;
             }
 
             timers[pos] = t;
@@ -278,6 +303,9 @@ private:
 
     void shuffleTimerForwardInQueue (size_t pos)
     {
+        if (pos >= timers.size())
+            return;
+        
         if (pos > 0)
         {
             auto t = timers[pos];
