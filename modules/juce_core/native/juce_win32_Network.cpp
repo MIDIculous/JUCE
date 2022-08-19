@@ -327,6 +327,9 @@ private:
         applyTimeout (sessionHandle, INTERNET_OPTION_SEND_TIMEOUT);
         applyTimeout (sessionHandle, INTERNET_OPTION_DATA_RECEIVE_TIMEOUT);
         applyTimeout (sessionHandle, INTERNET_OPTION_DATA_SEND_TIMEOUT);
+        applyTimeout (sessionHandle, INTERNET_OPTION_DISCONNECTED_TIMEOUT);
+        applyTimeout (sessionHandle, INTERNET_OPTION_FROM_CACHE_TIMEOUT);
+        applyTimeout (sessionHandle, INTERNET_OPTION_LISTEN_TIMEOUT);
 
         const bool isFtp = address.startsWithIgnoreCase ("ftp:");
 
