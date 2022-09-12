@@ -794,9 +794,9 @@ struct BackgroundDownloadTask  : public URL::DownloadTask
         const auto boolToString = [](bool b) {
             return String(b ? "true" : "false");
         };
-        
+
         const bool targetLocationExistedAlready = targetLocation.exists();
-        
+
         const File locationFile(nsStringToJuce(location.path));
         Logger::writeToLog("didFinishDownloadingToURL was called.\n    locationFile: "
                            + locationFile.getFullPathName() + "\n    targetLocation: " + targetLocation.getFullPathName());
@@ -804,59 +804,59 @@ struct BackgroundDownloadTask  : public URL::DownloadTask
                            + boolToString(locationFile.existsAsFile()));
         Logger::writeToLog("didFinishDownloadingToURL: locationFile.hasWriteAccess() is "
                            + boolToString(locationFile.hasWriteAccess()));
-        
+
         const auto result = targetLocation.getParentDirectory().createDirectory();
         if (result.failed())
             Logger::writeToLog("didFinishDownloadingToURL: Couldn't create targetLocation.getParentDirectory(). Error: " + result.getErrorMessage());
-        
+
         Logger::writeToLog("didFinishDownloadingToURL: targetLocation.hasWriteAccess() is "
                            + boolToString(targetLocation.hasWriteAccess()));
         Logger::writeToLog("didFinishDownloadingToURL: targetLocation.getParentDirectory().hasWriteAccess() is "
                            + boolToString(targetLocation.getParentDirectory().hasWriteAccess()));
         Logger::writeToLog("didFinishDownloadingToURL: targetLocation.getParentDirectory().isDirectory() is "
                            + boolToString(targetLocation.getParentDirectory().isDirectory()));
-        
+
         NSURL* targetLocationURL = createNSURLFromFile (targetLocation);
-        
-        auto* fileManager = [NSFileManager defaultManager];
+
+        auto* fileManager = NSFileManager.defaultManager;
+        jassert(fileManager);
         NSError* nsError = nil;
-        error = ([fileManager moveItemAtURL: location
-                                      toURL: targetLocationURL
-                                      error: &nsError] == NO);
+        jassert(!targetLocationURL.isFileReferenceURL);
+        // Try JUCE API
+        error = !locationFile.moveFileTo(targetLocation);
+
         if (error) {
-            Logger::writeToLog("didFinishDownloadingToURL: moveItemAtURL failed with error: "
-                               + nsStringToJuce(nsError.localizedDescription)
-                               + "\nTrying File::moveFileTo()...");
-            
-            // Try JUCE API
-            error = !locationFile.moveFileTo(targetLocation);
+            Logger::writeToLog("didFinishDownloadingToURL: File::moveFileTo() failed.\nTrying NSFileManager moveItemAtURL...");
+
+            // Try NSFileManager
+            error = ![fileManager moveItemAtURL: location
+                                          toURL: targetLocationURL
+                                          error: &nsError];
             if (error)
-                Logger::writeToLog("didFinishDownloadingToURL: locationFile.moveFileTo(targetLocation) failed.");
+                Logger::writeToLog("didFinishDownloadingToURL: locationFile.moveFileTo(targetLocation) failed with error: " + nsStringToJuce(nsError.localizedDescription));
         }
-        
+
         // If moving doesn't work, try copying
         if (error) {
-            error = ([fileManager copyItemAtURL: location
-                                          toURL: targetLocationURL
-                                          error: &nsError] == NO);
+            // Try JUCE API
+            error = !locationFile.copyFileTo(targetLocation);
             if (error) {
-                Logger::writeToLog("didFinishDownloadingToURL: copyItemAtURL failed with error: "
-                                   + nsStringToJuce(nsError.localizedDescription)
-                                   + "\nTrying File::copyFileTo()...");
-                
-                // Try JUCE API
-                error = !locationFile.copyFileTo(targetLocation);
+                Logger::writeToLog("didFinishDownloadingToURL: copyFileTo failed.\nTrying NSFileManager copyItemAtURL...");
+
+                error = ![fileManager copyItemAtURL: location
+                                              toURL: targetLocationURL
+                                              error: &nsError];
                 if (error)
-                    Logger::writeToLog("didFinishDownloadingToURL: locationFile.copyFileTo(targetLocation) failed.");
+                    Logger::writeToLog("didFinishDownloadingToURL: locationFile.copyFileTo(targetLocation) failed with error: " + nsStringToJuce(nsError.localizedDescription));
             }
-            
+
             locationFile.deleteFile();
         }
-        
+
         // If there was an error but the target file exists anyway, we treat it as a success
         if (error && targetLocation.exists() && !targetLocationExistedAlready)
             error = false;
-        
+
         httpCode = 200;
         finished = true;
 
