@@ -796,9 +796,11 @@ struct BackgroundDownloadTask  : public URL::DownloadTask
         };
 
         const bool targetLocationExistedAlready = targetLocation.exists();
+        NSURLRequest* request = (downloadTask.originalRequest ?: downloadTask.currentRequest);
 
         const File locationFile(nsStringToJuce(location.path));
-        Logger::writeToLog("didFinishDownloadingToURL was called.\n    locationFile: "
+        Logger::writeToLog("didFinishDownloadingToURL was called.\n    URL: "
+                           + nsStringToJuce(request.URL.absoluteString) + "\n    locationFile: "
                            + locationFile.getFullPathName() + "\n    targetLocation: " + targetLocation.getFullPathName());
         Logger::writeToLog("didFinishDownloadingToURL: locationFile.existsAsFile() is "
                            + boolToString(locationFile.existsAsFile()));
