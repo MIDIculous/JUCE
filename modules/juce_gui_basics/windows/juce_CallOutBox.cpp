@@ -59,7 +59,8 @@ public:
           callout (*content, area, parent)
     {
         callout.setVisible (true);
-        callout.enterModalState (true, this);
+        // We can't grab keyboard focus, otherwise a cascade of callbacks happens and dismisses this callback immediately
+        callout.enterModalState (/* takeKeyboardFocus: */ false, this);
         startTimer (200);
     }
 
