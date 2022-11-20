@@ -667,8 +667,27 @@ void JUCE_CALLTYPE NativeMessageBox::showAsync (const MessageBoxOptions& options
 }
 
 //==============================================================================
-bool DragAndDropContainer::performExternalDragDropOfFiles (const StringArray&, bool, Component*, std::function<void()>)
+bool DragAndDropContainer::performExternalDragDropOfFiles (const StringArray& files, bool canMoveFiles,
+                                                           Component* sourceComponent,
+                                                           std::function<void()> callback)
 {
+    if (!sourceComponent)
+        return false;
+    
+    auto* peer = sourceComponent->getPeer();
+    if (!peer) {
+        jassertfalse;
+        return false;
+    }
+    
+    JuceUIView* view = (JuceUIView*)peer->getNativeHandle();
+    if (![view isKindOfClass: JuceUIView.class]) {
+        jassertfalse;
+        return false;
+    }
+    
+    
+    
     jassertfalse;    // no such thing on iOS!
     return false;
 }

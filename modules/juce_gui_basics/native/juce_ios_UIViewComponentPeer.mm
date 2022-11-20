@@ -129,7 +129,7 @@ enum class MouseEventFlags
 
 using namespace juce;
 
-@interface JuceUIView : UIView <UITextViewDelegate>
+@interface JuceUIView : UIView <UITextViewDelegate, UIDragInteractionDelegate>
 {
 @public
     UIViewComponentPeer* owner;
@@ -495,6 +495,8 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
         [self addGestureRecognizer: panRecognizer];
     }
    #endif
+    
+    [self addInteraction: [[UIDragInteraction alloc] initWithDelegate: self]];
 
     return self;
 }
@@ -627,6 +629,16 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
             return getContainerAccessibilityElements (*handler);
 
     return nil;
+}
+
+- (NSArray<UIDragItem *> *)dragInteraction:(UIDragInteraction *)interaction itemsForBeginningSession:(id<UIDragSession>)dragSession
+{
+    id<UIDragDropSession> session = (id<UIDragDropSession>)dragSession;
+    if ([session conformsToProtocol: @protocol(UIDragDropSession)])
+        return session.items;
+    
+    jassertfalse;
+    return @[];
 }
 
 @end
