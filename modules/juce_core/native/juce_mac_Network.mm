@@ -451,14 +451,13 @@ public:
         startThread();
 
         const auto* parentThread = Thread::getCurrentThread();
-        jassert(parentThread);
-
         while (isThreadRunning() && ! initialised)
         {
             if (listener != nullptr)
                 if (! listener->postDataSendProgress (inputStream, (int) latestTotalBytes, (int) [[request HTTPBody] length]))
                     return false;
 
+            // parentThread can be null if this is the Message Thread
             if (parentThread && parentThread->threadShouldExit()) {
                 cancel();
                 return false;
