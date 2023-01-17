@@ -129,7 +129,7 @@ enum class MouseEventFlags
 
 using namespace juce;
 
-@interface JuceUIView : UIView <UITextViewDelegate, UIDragInteractionDelegate>
+@interface JuceUIView : UIView <UITextViewDelegate>
 {
 @public
     UIViewComponentPeer* owner;
@@ -165,7 +165,7 @@ using namespace juce;
 @end
 
 //==============================================================================
-@interface JuceUIViewController : UIViewController
+@interface JuceUIViewController : UIViewController<UIDragInteractionDelegate>
 {
 }
 
@@ -452,6 +452,16 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     sendScreenBoundsUpdate (self);
 }
 
+- (NSArray<UIDragItem *> *)dragInteraction:(UIDragInteraction *)interaction itemsForBeginningSession:(id<UIDragSession>)dragSession
+{
+    id<UIDragDropSession> session = (id<UIDragDropSession>)dragSession;
+    if ([session conformsToProtocol: @protocol(UIDragDropSession)])
+        return session.items;
+    
+    jassertfalse;
+    return @[];
+}
+
 @end
 
 @implementation JuceUIView
@@ -496,8 +506,6 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     }
    #endif
     
-    [self addInteraction: [[UIDragInteraction alloc] initWithDelegate: self]];
-
     return self;
 }
 
@@ -519,7 +527,7 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
 //==============================================================================
 - (void) touchesBegan: (NSSet*) touches withEvent: (UIEvent*) event
 {
-    ignoreUnused (touches);
+    [super touchesBegan:touches withEvent:event];
 
     if (owner != nullptr)
         owner->handleTouches (event, MouseEventFlags::down);
@@ -527,7 +535,7 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
 
 - (void) touchesMoved: (NSSet*) touches withEvent: (UIEvent*) event
 {
-    ignoreUnused (touches);
+    [super touchesMoved:touches withEvent:event];
 
     if (owner != nullptr)
         owner->handleTouches (event, MouseEventFlags::none);
@@ -535,7 +543,7 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
 
 - (void) touchesEnded: (NSSet*) touches withEvent: (UIEvent*) event
 {
-    ignoreUnused (touches);
+    [super touchesEnded:touches withEvent:event];
 
     if (owner != nullptr)
         owner->handleTouches (event, MouseEventFlags::up);
@@ -543,6 +551,8 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
 
 - (void) touchesCancelled: (NSSet*) touches withEvent: (UIEvent*) event
 {
+    [super touchesCancelled:touches withEvent:event];
+    
     if (owner != nullptr)
         owner->handleTouches (event, MouseEventFlags::upAndCancel);
 
@@ -631,16 +641,6 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     return nil;
 }
 
-- (NSArray<UIDragItem *> *)dragInteraction:(UIDragInteraction *)interaction itemsForBeginningSession:(id<UIDragSession>)dragSession
-{
-    id<UIDragDropSession> session = (id<UIDragDropSession>)dragSession;
-    if ([session conformsToProtocol: @protocol(UIDragDropSession)])
-        return session.items;
-    
-    jassertfalse;
-    return @[];
-}
-
 @end
 
 //==============================================================================
@@ -708,6 +708,14 @@ UIViewComponentPeer::UIViewComponentPeer (Component& comp, int windowStyleFlags,
 
         controller = [[JuceUIViewController alloc] init];
         controller.view = view;
+        
+        UIView* hiddenDragView = [UIView new];
+        [hiddenDragView addInteraction:[[UIDragInteraction alloc] initWithDelegate:(JuceUIViewController*)controller]];
+        hiddenDragView.hidden = NO;
+        hiddenDragView.backgroundColor = [UIColor greenColor];
+        hiddenDragView.frame = CGRectMake(0, 0, 500, 500);
+        [view addSubview: hiddenDragView];
+        
         window.rootViewController = controller;
 
         window.hidden = true;
