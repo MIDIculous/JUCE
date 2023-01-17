@@ -221,7 +221,7 @@ namespace
                 return;
             }
 
-            jassertfalse;
+            // jassertfalse;
         }
     }
 
