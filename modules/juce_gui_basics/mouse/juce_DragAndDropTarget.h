@@ -137,4 +137,15 @@ public:
     virtual bool shouldDrawDragImageWhenOver();
 };
 
+
+#if JUCE_IOS || DOXYGEN
+class JUCE_API  iOSDragAndDropSource
+{
+public:
+    virtual ~iOSDragAndDropSource() = default;
+    
+    virtual var getDragDescription() = 0;
+};
+#endif
+
 } // namespace juce

@@ -129,7 +129,7 @@ enum class MouseEventFlags
 
 using namespace juce;
 
-@interface JuceUIView : UIView <UITextViewDelegate>
+@interface JuceUIView : UIView <UITextViewDelegate, UIDragInteractionDelegate>
 {
 @public
     UIViewComponentPeer* owner;
@@ -165,7 +165,7 @@ using namespace juce;
 @end
 
 //==============================================================================
-@interface JuceUIViewController : UIViewController<UIDragInteractionDelegate>
+@interface JuceUIViewController : UIViewController
 {
 }
 
@@ -309,8 +309,7 @@ public:
             if (!component)
                 continue;
             
-            // If it's a ListBoxModel, call ListBoxModel::getDragSourceDescription()
-            // Otherwise (e.g. LoadedMidiFilesView) try casting to some base class that provides the description.
+            // If it's a ListBox, use ListBoxModel::getDragSourceDescription()
             auto* listBox = dynamic_cast<ListBox*>(component);
             if (!listBox)
                 listBox = component->findParentComponentOfClass<ListBox>();
@@ -328,6 +327,21 @@ public:
                             return files;
                     }
                 }
+            }
+            
+            // Otherwise, look for a iOSDragAndDropSource
+            auto* dragAndDropSource = dynamic_cast<iOSDragAndDropSource*>(component);
+            if (!dragAndDropSource)
+                dragAndDropSource = component->findParentComponentOfClass<iOSDragAndDropSource>();
+            
+            if (dragAndDropSource) {
+                const DragAndDropTarget::SourceDetails sourceDetails(
+                    dragAndDropSource->getDragDescription(),
+                    component,
+                    component->getLocalPoint(nullptr, screenPosition).roundToInt());
+                const auto files = getFilesForFileDrag(sourceDetails);
+                if (!files.isEmpty())
+                    return files;
             }
         }
         
@@ -356,12 +370,12 @@ private:
     
     StringArray getFilesForFileDrag(const DragAndDropTarget::SourceDetails& source)
     {
-        if (!source.sourceComponent)
+        if (!source.sourceComponent || source.description.isUndefined() || source.description == var())
             return {};
         
         auto* dragAndDropContainer = dynamic_cast<DragAndDropContainer*>(source.sourceComponent.get());
         if (!dragAndDropContainer) {
-            dragAndDropContainer = source.sourceComponent->findParentComponentOfClass<DragAndDropContainer>();
+            dragAndDropContainer = DragAndDropContainer::findParentDragContainerFor(source.sourceComponent);
             if (!dragAndDropContainer)
                 return {};
         }
@@ -504,24 +518,6 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
 - (void) viewDidLayoutSubviews
 {
     sendScreenBoundsUpdate (self);
-}
-
-- (NSArray<UIDragItem*>*)dragInteraction:(UIDragInteraction*)interaction itemsForBeginningSession:(id<UIDragSession>)dragSession
-{
-    JuceUIView* view = (JuceUIView*)self.view;
-    if (![view isKindOfClass: JuceUIView.class] || !view->owner) {
-        jassertfalse;
-        return @[];
-    }
-    
-    const auto files = view->owner->getFilesForFileDrag();
-    NSMutableArray<UIDragItem*>* items = [NSMutableArray arrayWithCapacity:files.size()];
-    for (const auto& file : files) {
-        NSItemProvider* itemProvider = [[NSItemProvider alloc] initWithContentsOfURL:[NSURL fileURLWithPath:juceStringToNS(file)]];
-        [items addObject:[[UIDragItem alloc] initWithItemProvider:itemProvider]];
-    }
-    
-    return items;
 }
 
 @end
@@ -703,6 +699,23 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     return nil;
 }
 
+- (NSArray<UIDragItem*>*)dragInteraction:(UIDragInteraction*)interaction itemsForBeginningSession:(id<UIDragSession>)dragSession
+{
+    if (!owner) {
+        jassertfalse;
+        return @[];
+    }
+    
+    const auto files = owner->getFilesForFileDrag();
+    NSMutableArray<UIDragItem*>* items = [NSMutableArray arrayWithCapacity:files.size()];
+    for (const auto& file : files) {
+        NSItemProvider* itemProvider = [[NSItemProvider alloc] initWithContentsOfURL:[NSURL fileURLWithPath:juceStringToNS(file)]];
+        [items addObject:[[UIDragItem alloc] initWithItemProvider:itemProvider]];
+    }
+    
+    return items;
+}
+
 @end
 
 //==============================================================================
@@ -754,6 +767,8 @@ UIViewComponentPeer::UIViewComponentPeer (Component& comp, int windowStyleFlags,
     if (! getComponentAsyncLayerBackedViewDisabled (component))
         [[view layer] setDrawsAsynchronously: YES];
    #endif
+    
+    [view addInteraction:[[UIDragInteraction alloc] initWithDelegate:view]];
 
     if (isSharedWindow)
     {
@@ -770,8 +785,6 @@ UIViewComponentPeer::UIViewComponentPeer (Component& comp, int windowStyleFlags,
 
         controller = [[JuceUIViewController alloc] init];
         controller.view = view;
-        
-        [view addInteraction:[[UIDragInteraction alloc] initWithDelegate:(JuceUIViewController*)controller]];
         
         window.rootViewController = controller;
 
