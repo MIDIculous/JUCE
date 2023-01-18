@@ -299,6 +299,40 @@ public:
     }
 
     static MultiTouchMapper<UITouch*> currentTouches;
+    
+    StringArray getFilesForFileDrag()
+    {
+        for (const auto& mouseInputSource : Desktop::getInstance().getMouseSources()) {
+            const auto screenPosition = mouseInputSource.getScreenPosition();
+            
+            auto* component = mouseInputSource.getComponentUnderMouse();
+            if (!component)
+                continue;
+            
+            // If it's a ListBoxModel, call ListBoxModel::getDragSourceDescription()
+            // Otherwise (e.g. LoadedMidiFilesView) try casting to some base class that provides the description.
+            auto* listBox = dynamic_cast<ListBox*>(component);
+            if (!listBox)
+                listBox = component->findParentComponentOfClass<ListBox>();
+                
+            if (listBox) {
+                if (auto* model = listBox->getModel()) {
+                    const auto rowsToDrag = listBox->getSelectedRows();
+                    if (rowsToDrag.size() > 0) {
+                        const DragAndDropTarget::SourceDetails sourceDetails(
+                            model->getDragSourceDescription(rowsToDrag),
+                            listBox,
+                            listBox->getLocalPoint(nullptr, screenPosition).roundToInt());
+                        const auto files = getFilesForFileDrag(sourceDetails);
+                        if (!files.isEmpty())
+                            return files;
+                    }
+                }
+            }
+        }
+        
+        return {};
+    }
 
 private:
     //==============================================================================
@@ -319,6 +353,26 @@ private:
                 peer->repaint (rect);
         }
     };
+    
+    StringArray getFilesForFileDrag(const DragAndDropTarget::SourceDetails& source)
+    {
+        if (!source.sourceComponent)
+            return {};
+        
+        auto* dragAndDropContainer = dynamic_cast<DragAndDropContainer*>(source.sourceComponent.get());
+        if (!dragAndDropContainer) {
+            dragAndDropContainer = source.sourceComponent->findParentComponentOfClass<DragAndDropContainer>();
+            if (!dragAndDropContainer)
+                return {};
+        }
+        
+        StringArray files;
+        bool canMoveFiles = false;
+        if (dragAndDropContainer->shouldDropFilesWhenDraggedExternally(source, files, canMoveFiles))
+            return files;
+        
+        return {};
+    }
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UIViewComponentPeer)
@@ -452,14 +506,22 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     sendScreenBoundsUpdate (self);
 }
 
-- (NSArray<UIDragItem *> *)dragInteraction:(UIDragInteraction *)interaction itemsForBeginningSession:(id<UIDragSession>)dragSession
+- (NSArray<UIDragItem*>*)dragInteraction:(UIDragInteraction*)interaction itemsForBeginningSession:(id<UIDragSession>)dragSession
 {
-    id<UIDragDropSession> session = (id<UIDragDropSession>)dragSession;
-    if ([session conformsToProtocol: @protocol(UIDragDropSession)])
-        return session.items;
+    JuceUIView* view = (JuceUIView*)self.view;
+    if (![view isKindOfClass: JuceUIView.class] || !view->owner) {
+        jassertfalse;
+        return @[];
+    }
     
-    jassertfalse;
-    return @[];
+    const auto files = view->owner->getFilesForFileDrag();
+    NSMutableArray<UIDragItem*>* items = [NSMutableArray arrayWithCapacity:files.size()];
+    for (const auto& file : files) {
+        NSItemProvider* itemProvider = [[NSItemProvider alloc] initWithContentsOfURL:[NSURL fileURLWithPath:juceStringToNS(file)]];
+        [items addObject:[[UIDragItem alloc] initWithItemProvider:itemProvider]];
+    }
+    
+    return items;
 }
 
 @end
@@ -709,12 +771,7 @@ UIViewComponentPeer::UIViewComponentPeer (Component& comp, int windowStyleFlags,
         controller = [[JuceUIViewController alloc] init];
         controller.view = view;
         
-        UIView* hiddenDragView = [UIView new];
-        [hiddenDragView addInteraction:[[UIDragInteraction alloc] initWithDelegate:(JuceUIViewController*)controller]];
-        hiddenDragView.hidden = NO;
-        hiddenDragView.backgroundColor = [UIColor greenColor];
-        hiddenDragView.frame = CGRectMake(0, 0, 500, 500);
-        [view addSubview: hiddenDragView];
+        [view addInteraction:[[UIDragInteraction alloc] initWithDelegate:(JuceUIViewController*)controller]];
         
         window.rootViewController = controller;
 
