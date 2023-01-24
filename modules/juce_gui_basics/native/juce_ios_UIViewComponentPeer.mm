@@ -710,7 +710,20 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     NSMutableArray<UIDragItem*>* items = [NSMutableArray arrayWithCapacity:files.size()];
     for (const auto& file : files) {
         NSItemProvider* itemProvider = [[NSItemProvider alloc] initWithContentsOfURL:[NSURL fileURLWithPath:juceStringToNS(file)]];
-        [items addObject:[[UIDragItem alloc] initWithItemProvider:itemProvider]];
+        if (!itemProvider) {
+            jassertfalse;
+            continue;
+        }
+        
+        itemProvider.suggestedName = juceStringToNS(File(file).getFileName());
+        itemProvider.preferredPresentationStyle = UIPreferredPresentationStyleAttachment;
+        
+        UIDragItem* dragItem = [[UIDragItem alloc] initWithItemProvider:itemProvider];
+        dragItem.previewProvider = ^UIDragPreview* _Nullable {
+            return [[UIDragPreview alloc] initWithView:UIView];
+        };
+        
+        [items addObject:dragItem];
     }
     
     return items;
