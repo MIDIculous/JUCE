@@ -300,7 +300,13 @@ public:
 
     static MultiTouchMapper<UITouch*> currentTouches;
     
-    StringArray getFilesForFileDrag()
+    struct FilesDragInfo final
+    {
+        StringArray filePaths;
+        Image componentSnapshot;
+    };
+    
+    FilesDragInfo getFilesForFileDrag()
     {
         for (const auto& mouseInputSource : Desktop::getInstance().getMouseSources()) {
             const auto screenPosition = mouseInputSource.getScreenPosition();
@@ -324,7 +330,7 @@ public:
                             listBox->getLocalPoint(nullptr, screenPosition).roundToInt());
                         const auto files = getFilesForFileDrag(sourceDetails);
                         if (!files.isEmpty())
-                            return files;
+                            return { files, listBox->createComponentSnapshot(listBox->getRowPosition(listBox->getSelectedRow(), /* relativeToComponentTopLeft: */ true)) };
                     }
                 }
             }
@@ -335,13 +341,18 @@ public:
                 dragAndDropSource = component->findParentComponentOfClass<iOSDragAndDropSource>();
             
             if (dragAndDropSource) {
+                auto* asComponent = dynamic_cast<Component*>(dragAndDropSource);
+                if (!asComponent) {
+                    jassertfalse;
+                    continue;
+                }
                 const DragAndDropTarget::SourceDetails sourceDetails(
                     dragAndDropSource->getDragDescription(),
-                    component,
-                    component->getLocalPoint(nullptr, screenPosition).roundToInt());
+                    asComponent,
+                    asComponent->getLocalPoint(nullptr, screenPosition).roundToInt());
                 const auto files = getFilesForFileDrag(sourceDetails);
                 if (!files.isEmpty())
-                    return files;
+                    return { files, asComponent->createComponentSnapshot(asComponent->getLocalBounds()) };
             }
         }
         
@@ -706,22 +717,42 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
         return @[];
     }
     
-    const auto files = owner->getFilesForFileDrag();
-    NSMutableArray<UIDragItem*>* items = [NSMutableArray arrayWithCapacity:files.size()];
-    for (const auto& file : files) {
-        NSItemProvider* itemProvider = [[NSItemProvider alloc] initWithContentsOfURL:[NSURL fileURLWithPath:juceStringToNS(file)]];
+    const auto filesDragInfo = owner->getFilesForFileDrag();
+    if (filesDragInfo.filePaths.isEmpty())
+        return @[];
+    
+    PNGImageFormat pngImageFormat;
+    MemoryBlock pngData;
+    MemoryOutputStream outputStream(pngData, /* appendToExistingBlockContent: */ false);
+    UIImage* previewImage = nil;
+    if (filesDragInfo.componentSnapshot.isValid() && pngImageFormat.writeImageToStream(filesDragInfo.componentSnapshot, outputStream)) {
+        outputStream.flush();
+        previewImage = [UIImage imageWithData:[NSData dataWithBytes:pngData.getData() length:pngData.getSize()]];
+    }
+    else {
+        jassertfalse;
+    }
+    
+    NSMutableArray<UIDragItem*>* items = [NSMutableArray arrayWithCapacity:filesDragInfo.filePaths.size()];
+    
+    for (const auto& filePath : filesDragInfo.filePaths) {
+        NSItemProvider* itemProvider = [[NSItemProvider alloc] initWithContentsOfURL:[NSURL fileURLWithPath:juceStringToNS(filePath)]];
         if (!itemProvider) {
             jassertfalse;
             continue;
         }
         
-        itemProvider.suggestedName = juceStringToNS(File(file).getFileName());
+        itemProvider.suggestedName = juceStringToNS(File(filePath).getFileName());
         itemProvider.preferredPresentationStyle = UIPreferredPresentationStyleAttachment;
         
         UIDragItem* dragItem = [[UIDragItem alloc] initWithItemProvider:itemProvider];
-        dragItem.previewProvider = ^UIDragPreview* _Nullable {
-            return [[UIDragPreview alloc] initWithView:UIView];
-        };
+        if (previewImage) {
+            dragItem.previewProvider = ^UIDragPreview* _Nullable {
+                UIImageView* imageView = [[UIImageView alloc] initWithImage:previewImage];
+                imageView.backgroundColor = UIColor.blackColor;
+                return [[UIDragPreview alloc] initWithView:imageView];
+            };
+        }
         
         [items addObject:dragItem];
     }
