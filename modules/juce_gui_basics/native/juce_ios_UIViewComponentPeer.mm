@@ -129,7 +129,7 @@ enum class MouseEventFlags
 
 using namespace juce;
 
-@interface JuceUIView : UIView <UITextViewDelegate>
+@interface JuceUIView : UIView <UITextViewDelegate, UIDragInteractionDelegate>
 {
 @public
     UIViewComponentPeer* owner;
@@ -299,6 +299,65 @@ public:
     }
 
     static MultiTouchMapper<UITouch*> currentTouches;
+    
+    struct FilesDragInfo final
+    {
+        StringArray filePaths;
+        Image componentSnapshot;
+    };
+    
+    FilesDragInfo getFilesForFileDrag()
+    {
+        for (const auto& mouseInputSource : Desktop::getInstance().getMouseSources()) {
+            const auto screenPosition = mouseInputSource.getScreenPosition();
+            
+            auto* component = mouseInputSource.getComponentUnderMouse();
+            if (!component)
+                continue;
+            
+            // If it's a ListBox, use ListBoxModel::getDragSourceDescription()
+            auto* listBox = dynamic_cast<ListBox*>(component);
+            if (!listBox)
+                listBox = component->findParentComponentOfClass<ListBox>();
+                
+            if (listBox) {
+                if (auto* model = listBox->getModel()) {
+                    const auto rowsToDrag = listBox->getSelectedRows();
+                    if (rowsToDrag.size() > 0) {
+                        const DragAndDropTarget::SourceDetails sourceDetails(
+                            model->getDragSourceDescription(rowsToDrag),
+                            listBox,
+                            listBox->getLocalPoint(nullptr, screenPosition).roundToInt());
+                        const auto files = getFilesForFileDrag(sourceDetails);
+                        if (!files.isEmpty())
+                            return { files, listBox->createComponentSnapshot(listBox->getRowPosition(listBox->getSelectedRow(), /* relativeToComponentTopLeft: */ true)) };
+                    }
+                }
+            }
+            
+            // Otherwise, look for a iOSDragAndDropSource
+            auto* dragAndDropSource = dynamic_cast<iOSDragAndDropSource*>(component);
+            if (!dragAndDropSource)
+                dragAndDropSource = component->findParentComponentOfClass<iOSDragAndDropSource>();
+            
+            if (dragAndDropSource) {
+                auto* asComponent = dynamic_cast<Component*>(dragAndDropSource);
+                if (!asComponent) {
+                    jassertfalse;
+                    continue;
+                }
+                const DragAndDropTarget::SourceDetails sourceDetails(
+                    dragAndDropSource->getDragDescription(),
+                    asComponent,
+                    asComponent->getLocalPoint(nullptr, screenPosition).roundToInt());
+                const auto files = getFilesForFileDrag(sourceDetails);
+                if (!files.isEmpty())
+                    return { files, asComponent->createComponentSnapshot(asComponent->getLocalBounds()) };
+            }
+        }
+        
+        return {};
+    }
 
 private:
     //==============================================================================
@@ -319,6 +378,26 @@ private:
                 peer->repaint (rect);
         }
     };
+    
+    StringArray getFilesForFileDrag(const DragAndDropTarget::SourceDetails& source)
+    {
+        if (!source.sourceComponent || source.description.isUndefined() || source.description == var())
+            return {};
+        
+        auto* dragAndDropContainer = dynamic_cast<DragAndDropContainer*>(source.sourceComponent.get());
+        if (!dragAndDropContainer) {
+            dragAndDropContainer = DragAndDropContainer::findParentDragContainerFor(source.sourceComponent);
+            if (!dragAndDropContainer)
+                return {};
+        }
+        
+        StringArray files;
+        bool canMoveFiles = false;
+        if (dragAndDropContainer->shouldDropFilesWhenDraggedExternally(source, files, canMoveFiles))
+            return files;
+        
+        return {};
+    }
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UIViewComponentPeer)
@@ -629,6 +708,56 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     return nil;
 }
 
+- (NSArray<UIDragItem*>*)dragInteraction:(UIDragInteraction*)interaction itemsForBeginningSession:(id<UIDragSession>)dragSession
+{
+    if (!owner) {
+        jassertfalse;
+        return @[];
+    }
+    
+    const auto filesDragInfo = owner->getFilesForFileDrag();
+    if (filesDragInfo.filePaths.isEmpty())
+        return @[];
+    
+    PNGImageFormat pngImageFormat;
+    MemoryBlock pngData;
+    MemoryOutputStream outputStream(pngData, /* appendToExistingBlockContent: */ false);
+    UIImage* previewImage = nil;
+    if (filesDragInfo.componentSnapshot.isValid() && pngImageFormat.writeImageToStream(filesDragInfo.componentSnapshot, outputStream)) {
+        outputStream.flush();
+        previewImage = [UIImage imageWithData:[NSData dataWithBytes:pngData.getData() length:pngData.getSize()]];
+    }
+    else {
+        jassertfalse;
+    }
+    
+    NSMutableArray<UIDragItem*>* items = [NSMutableArray arrayWithCapacity:filesDragInfo.filePaths.size()];
+    
+    for (const auto& filePath : filesDragInfo.filePaths) {
+        NSItemProvider* itemProvider = [[NSItemProvider alloc] initWithContentsOfURL:[NSURL fileURLWithPath:juceStringToNS(filePath)]];
+        if (!itemProvider) {
+            jassertfalse;
+            continue;
+        }
+        
+        itemProvider.suggestedName = juceStringToNS(File(filePath).getFileName());
+        itemProvider.preferredPresentationStyle = UIPreferredPresentationStyleAttachment;
+        
+        UIDragItem* dragItem = [[UIDragItem alloc] initWithItemProvider:itemProvider];
+        if (previewImage) {
+            dragItem.previewProvider = ^UIDragPreview* _Nullable {
+                UIImageView* imageView = [[UIImageView alloc] initWithImage:previewImage];
+                imageView.backgroundColor = UIColor.blackColor;
+                return [[UIDragPreview alloc] initWithView:imageView];
+            };
+        }
+        
+        [items addObject:dragItem];
+    }
+    
+    return items;
+}
+
 @end
 
 //==============================================================================
@@ -680,6 +809,8 @@ UIViewComponentPeer::UIViewComponentPeer (Component& comp, int windowStyleFlags,
     if (! getComponentAsyncLayerBackedViewDisabled (component))
         [[view layer] setDrawsAsynchronously: YES];
    #endif
+    
+    [view addInteraction:[[UIDragInteraction alloc] initWithDelegate:view]];
 
     if (isSharedWindow)
     {

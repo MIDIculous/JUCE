@@ -669,7 +669,7 @@ void JUCE_CALLTYPE NativeMessageBox::showAsync (const MessageBoxOptions& options
 //==============================================================================
 bool DragAndDropContainer::performExternalDragDropOfFiles (const StringArray&, bool, Component*, std::function<void()>)
 {
-    jassertfalse;    // no such thing on iOS!
+    jassertfalse;    // Don't call this programmatically, use iOSDragAndDropSource instead.
     return false;
 }
 
