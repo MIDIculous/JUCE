@@ -340,7 +340,10 @@ static void sendScreenBoundsUpdate (JuceUIViewController* c)
 static bool isKioskModeView (JuceUIViewController* c)
 {
     JuceUIView* juceView = (JuceUIView*) [c view];
-    jassert (juceView != nil && juceView->owner != nullptr);
+    if (juceView == nil || juceView->owner == nullptr) {
+        jassertfalse;
+        return false;
+    }
 
     return Desktop::getInstance().getKioskModeComponent() == &(juceView->owner->getComponent());
 }
