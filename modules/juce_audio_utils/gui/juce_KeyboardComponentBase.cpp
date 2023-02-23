@@ -459,4 +459,6 @@ void KeyboardComponentBase::mouseWheelMove (const MouseEvent&, const MouseWheelD
     setLowestVisibleKeyFloat (firstKey - amount * keyWidth);
 }
 
+void KeyboardComponentBase::noteStateChangedFromGUI(int midiNoteNumber, bool isDown) {}
+
 } // namespace juce
