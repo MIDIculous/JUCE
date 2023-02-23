@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -120,6 +120,19 @@ static int64 findCentralDirectoryFileHeader (InputStream& input, int& numEntries
     }
 
     return 0;
+}
+
+static bool hasSymbolicPart (const File& root, const File& f)
+{
+    jassert (root == f || f.isAChildOf (root));
+
+    for (auto p = f; p != root; p = p.getParentDirectory())
+    {
+        if (p.isSymbolicLink())
+            return true;
+    }
+
+    return false;
 }
 
 //==============================================================================
@@ -387,11 +400,11 @@ void ZipFile::init()
 
 Result ZipFile::uncompressTo (const File& targetDirectory,
                               const bool shouldOverwriteFiles,
-                              bool* filesWereUncompressedPointer)
+                              bool* filesWereUncompressed)
 {
     for (int i = 0; i < entries.size(); ++i)
     {
-        auto result = uncompressEntry (i, targetDirectory, shouldOverwriteFiles, filesWereUncompressedPointer);
+        auto result = uncompressEntry (i, targetDirectory, shouldOverwriteFiles, filesWereUncompressed);
 
         if (result.failed())
             return result;
@@ -400,7 +413,16 @@ Result ZipFile::uncompressTo (const File& targetDirectory,
     return Result::ok();
 }
 
-Result ZipFile::uncompressEntry (int index, const File& targetDirectory, bool shouldOverwriteFiles, bool* filesWereUncompressedPointer)
+Result ZipFile::uncompressEntry (int index, const File& targetDirectory, bool shouldOverwriteFiles, bool* filesWereUncompressed)
+{
+    return uncompressEntry (index,
+                            targetDirectory,
+                            shouldOverwriteFiles ? OverwriteFiles::yes : OverwriteFiles::no,
+                            FollowSymlinks::no,
+                            filesWereUncompressed);
+}
+
+Result ZipFile::uncompressEntry (int index, const File& targetDirectory, OverwriteFiles overwriteFiles, FollowSymlinks followSymlinks, bool* filesWereUncompressed)
 {
     auto* zei = entries.getUnchecked (index);
 
@@ -415,31 +437,31 @@ Result ZipFile::uncompressEntry (int index, const File& targetDirectory, bool sh
 
     auto targetFile = targetDirectory.getChildFile (entryPath);
 
-    if (entryPath.endsWithChar ('/') || entryPath.endsWithChar ('\\')) {
-        const bool existedAlready = targetFile.isDirectory();
-        const auto result = targetFile.createDirectory(); // (entry is a directory, not a file)
-        if (!existedAlready && filesWereUncompressedPointer)
-            *filesWereUncompressedPointer = result.wasOk();
+    if (! targetFile.isAChildOf (targetDirectory))
+        return Result::fail ("Entry " + entryPath + " is outside the target directory");
 
-        return result;
-    }
+    if (entryPath.endsWithChar ('/') || entryPath.endsWithChar ('\\'))
+        return targetFile.createDirectory(); // (entry is a directory, not a file)
+
+    std::unique_ptr<InputStream> in (createStreamForEntry (index));
+
+    if (in == nullptr)
+        return Result::fail ("Failed to open the zip file for reading");
 
     if (targetFile.exists())
     {
-        if (! shouldOverwriteFiles)
+        if (overwriteFiles == OverwriteFiles::no)
             return Result::ok();
 
         if (! targetFile.deleteFile())
             return Result::fail ("Failed to write to target file: " + targetFile.getFullPathName());
     }
 
+    if (followSymlinks == FollowSymlinks::no && hasSymbolicPart (targetDirectory, targetFile.getParentDirectory()))
+        return Result::fail ("Parent directory leads through symlink for target file: " + targetFile.getFullPathName());
+
     if (! targetFile.getParentDirectory().createDirectory())
         return Result::fail ("Failed to create target folder: " + targetFile.getParentDirectory().getFullPathName());
-
-    std::unique_ptr<InputStream> in (createStreamForEntry (index));
-
-    if (in == nullptr)
-        return Result::fail ("Failed to open the zip file for reading");
 
     if (zei->entry.isSymbolicLink)
     {
@@ -453,18 +475,18 @@ Result ZipFile::uncompressEntry (int index, const File& targetDirectory, bool sh
     {
         FileOutputStream out (targetFile);
 
-        if (out.failedToOpen() || !out.writeFromInputStream(*in, -1))
+        if (out.failedToOpen())
             return Result::fail ("Failed to write to target file: " + targetFile.getFullPathName());
 
-        out.flush();
+        out << *in;
     }
 
     targetFile.setCreationTime (zei->entry.fileTime);
     targetFile.setLastModificationTime (zei->entry.fileTime);
     targetFile.setLastAccessTime (zei->entry.fileTime);
-
-    if (filesWereUncompressedPointer)
-        *filesWereUncompressedPointer = true;
+    
+    if (filesWereUncompressed)
+        *filesWereUncompressed = true;
 
     return Result::ok();
 }
@@ -659,12 +681,9 @@ struct ZIPTests   : public UnitTest
         : UnitTest ("ZIP", UnitTestCategories::compression)
     {}
 
-    void runTest() override
+    static MemoryBlock createZipMemoryBlock (const StringArray& entryNames)
     {
-        beginTest ("ZIP");
-
         ZipFile::Builder builder;
-        StringArray entryNames { "first", "second", "third" };
         HashMap<String, MemoryBlock> blocks;
 
         for (auto& entryName : entryNames)
@@ -679,8 +698,61 @@ struct ZIPTests   : public UnitTest
         MemoryBlock data;
         MemoryOutputStream mo (data, false);
         builder.writeToStream (mo, nullptr);
-        MemoryInputStream mi (data, false);
 
+        return data;
+    }
+
+    void runZipSlipTest()
+    {
+        const std::map<String, bool> testCases = { { "a",                    true  },
+#if JUCE_WINDOWS
+                                                   { "C:/b",                 false },
+#else
+                                                   { "/b",                   false },
+#endif
+                                                   { "c/d",                  true  },
+                                                   { "../e/f",               false },
+                                                   { "../../g/h",            false },
+                                                   { "i/../j",               true  },
+                                                   { "k/l/../",              true  },
+                                                   { "m/n/../../",           false },
+                                                   { "o/p/../../../",        false } };
+
+        StringArray entryNames;
+
+        for (const auto& testCase : testCases)
+            entryNames.add (testCase.first);
+
+        TemporaryFile tmpDir;
+        tmpDir.getFile().createDirectory();
+        auto data = createZipMemoryBlock (entryNames);
+        MemoryInputStream mi (data, false);
+        ZipFile zip (mi);
+
+        for (int i = 0; i < zip.getNumEntries(); ++i)
+        {
+            const auto result = zip.uncompressEntry (i, tmpDir.getFile());
+            const auto caseIt = testCases.find (zip.getEntry (i)->filename);
+
+            if (caseIt != testCases.end())
+            {
+                expect (result.wasOk() == caseIt->second,
+                        zip.getEntry (i)->filename + " was unexpectedly " + (result.wasOk() ? "OK" : "not OK"));
+            }
+            else
+            {
+                expect (false);
+            }
+        }
+    }
+
+    void runTest() override
+    {
+        beginTest ("ZIP");
+
+        StringArray entryNames { "first", "second", "third" };
+        auto data = createZipMemoryBlock (entryNames);
+        MemoryInputStream mi (data, false);
         ZipFile zip (mi);
 
         expectEquals (zip.getNumEntries(), entryNames.size());
@@ -691,6 +763,9 @@ struct ZIPTests   : public UnitTest
             std::unique_ptr<InputStream> input (zip.createStreamForEntry (*entry));
             expectEquals (input->readEntireStreamAsString(), entryName);
         }
+
+        beginTest ("ZipSlip");
+        runZipSlipTest();
     }
 };
 

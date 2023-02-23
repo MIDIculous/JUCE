@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -54,6 +54,14 @@
  #endif
 
  #if JUCE_USE_DIRECTWRITE || JUCE_DIRECT2D
+  /*  This is a workaround for broken-by-default function definitions
+      in the MinGW headers. If you're using a newer distribution of MinGW,
+      then your headers may substitute the broken definitions with working definitions
+      when this flag is enabled. Unfortunately, not all MinGW headers contain this
+      workaround, so Direct2D remains disabled by default when building with MinGW.
+  */
+  #define WIDL_EXPLICIT_AGGREGATE_RETURNS 1
+
   /* If you hit a compile error trying to include these files, you may need to update
      your version of the Windows SDK to the latest one. The DirectWrite and Direct2D
      headers are in the version 7 SDKs.
@@ -96,8 +104,6 @@
  #define JUCE_USING_COREIMAGE_LOADER 0
 #endif
 
-#include "third_party/flat_hash_map.hpp"
-
 //==============================================================================
 #include "colour/juce_Colour.cpp"
 #include "colour/juce_ColourGradient.cpp"
@@ -109,9 +115,7 @@
 #include "geometry/juce_PathIterator.cpp"
 #include "geometry/juce_PathStrokeType.cpp"
 #include "placement/juce_RectanglePlacement.cpp"
-#include "fonts/GlyphArrangementCache.h"
 #include "contexts/juce_GraphicsContext.cpp"
-#include "fonts/GlyphArrangementCache.cpp"
 #include "contexts/juce_LowLevelGraphicsPostScriptRenderer.cpp"
 #include "contexts/juce_LowLevelGraphicsSoftwareRenderer.cpp"
 #include "images/juce_Image.cpp"

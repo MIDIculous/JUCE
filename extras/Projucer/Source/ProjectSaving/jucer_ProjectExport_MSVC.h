@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -32,6 +32,14 @@ inline String msBuildEscape (String str)
         str = str.replace (special, "%" + String::toHexString (*special));
 
     return str;
+}
+
+inline StringArray msBuildEscape (StringArray range)
+{
+    for (auto& i : range)
+        i = msBuildEscape (i);
+
+    return range;
 }
 
 //==============================================================================
@@ -65,11 +73,21 @@ public:
     String getWindowsTargetPlatformVersion() const    { return targetPlatformVersion.get(); }
 
     //==============================================================================
-    void addToolsetProperty (PropertyListBuilder& props, const char** names, const var* values, int num)
+    void addToolsetProperty (PropertyListBuilder& props, std::initializer_list<const char*> valueStrings)
     {
-        props.add (new ChoicePropertyComponent (platformToolsetValue, "Platform Toolset",
-                                                StringArray (names, num), { values, num }),
-                   "Specifies the version of the platform toolset that will be used when building this project.");
+        StringArray names;
+        Array<var> values;
+
+        for (const auto& valueString : valueStrings)
+        {
+            names.add (valueString);
+            values.add (valueString);
+        }
+
+        props.add (new ChoicePropertyComponent (platformToolsetValue, "Platform Toolset", names, values),
+                   "Specifies the version of the platform toolset that will be used when building this project.\n"
+                   "In order to use the ClangCL toolset, you must first install the \"C++ Clang Tools for Windows\" "
+                   "package using the Visual Studio Installer.");
     }
 
     void create (const OwnedArray<LibraryModule>&) const override
@@ -131,8 +149,8 @@ public:
         aaxPathValueWrapper.init ({ settings, Ids::aaxFolder, nullptr },
                                   getAppSettings().getStoredPath (Ids::aaxPath,  TargetOS::windows), TargetOS::windows);
 
-        rtasPathValueWrapper.init ({ settings, Ids::rtasFolder, nullptr },
-                                   getAppSettings().getStoredPath (Ids::rtasPath, TargetOS::windows), TargetOS::windows);
+        araPathValueWrapper.init ({ settings, Ids::araFolder, nullptr },
+                                  getAppSettings().getStoredPath (Ids::araPath, TargetOS::windows), TargetOS::windows);
     }
 
     //==============================================================================
@@ -153,14 +171,14 @@ public:
               multiProcessorCompilationValue (config, Ids::multiProcessorCompilation,  getUndoManager(), true),
               intermediatesPathValue         (config, Ids::intermediatesPath,          getUndoManager()),
               characterSetValue              (config, Ids::characterSet,               getUndoManager()),
-              architectureTypeValue          (config, Ids::winArchitecture,            getUndoManager(), get64BitArchName()),
+              architectureTypeValue          (config, Ids::winArchitecture,            getUndoManager(), getIntel64BitArchName()),
               fastMathValue                  (config, Ids::fastMath,                   getUndoManager()),
               debugInformationFormatValue    (config, Ids::debugInformationFormat,     getUndoManager(), isDebug() ? "ProgramDatabase" : "None"),
               pluginBinaryCopyStepValue      (config, Ids::enablePluginBinaryCopyStep, getUndoManager(), false),
               vstBinaryLocation              (config, Ids::vstBinaryLocation,          getUndoManager()),
               vst3BinaryLocation             (config, Ids::vst3BinaryLocation,         getUndoManager()),
-              rtasBinaryLocation             (config, Ids::rtasBinaryLocation,         getUndoManager()),
               aaxBinaryLocation              (config, Ids::aaxBinaryLocation,          getUndoManager()),
+              lv2BinaryLocation              (config, Ids::lv2BinaryLocation,          getUndoManager()),
               unityPluginBinaryLocation      (config, Ids::unityPluginBinaryLocation,  getUndoManager(), {})
         {
             setPluginBinaryCopyLocationDefaults();
@@ -178,13 +196,15 @@ public:
         String getPostbuildCommandString() const          { return postbuildCommandValue.get(); }
         String getVSTBinaryLocationString() const         { return vstBinaryLocation.get(); }
         String getVST3BinaryLocationString() const        { return vst3BinaryLocation.get(); }
-        String getRTASBinaryLocationString() const        { return rtasBinaryLocation.get();}
         String getAAXBinaryLocationString() const         { return aaxBinaryLocation.get();}
+        String getLV2BinaryLocationString() const         { return lv2BinaryLocation.get();}
         String getUnityPluginBinaryLocationString() const { return unityPluginBinaryLocation.get(); }
         String getIntermediatesPathString() const         { return intermediatesPathValue.get(); }
         String getCharacterSetString() const              { return characterSetValue.get(); }
-        String get64BitArchName() const                   { return "x64"; }
-        String get32BitArchName() const                   { return "Win32"; }
+        String getIntel64BitArchName() const              { return "x64"; }
+        String getIntel32BitArchName() const              { return "Win32"; }
+        String getArm64BitArchName() const                { return "ARM64"; }
+        String getArm32BitArchName() const                { return "ARM"; }
         String getArchitectureString() const              { return architectureTypeValue.get(); }
         String getDebugInformationFormatString() const    { return debugInformationFormatValue.get(); }
 
@@ -193,18 +213,25 @@ public:
         bool shouldLinkIncremental() const                { return enableIncrementalLinkingValue.get(); }
         bool isUsingRuntimeLibDLL() const                 { return useRuntimeLibDLLValue.get(); }
         bool shouldUseMultiProcessorCompilation() const   { return multiProcessorCompilationValue.get(); }
-        bool is64Bit() const                              { return getArchitectureString() == get64BitArchName(); }
         bool isFastMathEnabled() const                    { return fastMathValue.get(); }
         bool isPluginBinaryCopyStepEnabled() const        { return pluginBinaryCopyStepValue.get(); }
 
         //==============================================================================
         String createMSVCConfigName() const
         {
-            return getName() + "|" + (is64Bit() ? "x64" : "Win32");
+            return getName() + "|" + getArchitectureString();
         }
 
-        String getOutputFilename (const String& suffix, bool forceSuffix, bool forceUnityPrefix) const
+        String getOutputFilename (const String& suffix,
+                                  bool forceSuffix,
+                                  build_tools::ProjectType::Target::Type type) const
         {
+            using Target = build_tools::ProjectType::Target::Type;
+
+            if (type == Target::LV2TurtleProgram)
+                return Project::getLV2FileWriterName() + suffix;
+
+            const auto forceUnityPrefix = type == Target::UnityPlugIn;
             auto target = File::createLegalFileName (getTargetBinaryNameString (forceUnityPrefix).trim());
 
             if (forceSuffix || ! target.containsChar ('.'))
@@ -219,10 +246,9 @@ public:
                 addVisualStudioPluginInstallPathProperties (props);
 
             props.add (new ChoicePropertyComponent (architectureTypeValue, "Architecture",
-                                                    { get32BitArchName(), get64BitArchName() },
-                                                    { get32BitArchName(), get64BitArchName() }),
-                       "Whether to use a 32-bit or 64-bit architecture.");
-
+                                                    { getIntel32BitArchName(), getIntel64BitArchName(), getArm32BitArchName(), getArm64BitArchName() },
+                                                    { getIntel32BitArchName(), getIntel64BitArchName(), getArm32BitArchName(), getArm64BitArchName() }),
+                       "Which Windows architecture to use.");
 
             props.add (new ChoicePropertyComponentWithEnablement (debugInformationFormatValue,
                                                                   isDebug() ? isDebugValue : generateDebugSymbolsValue,
@@ -310,19 +336,19 @@ public:
         }
 
     private:
-        ValueWithDefault warningLevelValue, warningsAreErrorsValue, prebuildCommandValue, postbuildCommandValue, generateDebugSymbolsValue,
-                         generateManifestValue, enableIncrementalLinkingValue, useRuntimeLibDLLValue, multiProcessorCompilationValue,
-                         intermediatesPathValue, characterSetValue, architectureTypeValue, fastMathValue, debugInformationFormatValue,
-                         pluginBinaryCopyStepValue;
+        ValueTreePropertyWithDefault warningLevelValue, warningsAreErrorsValue, prebuildCommandValue, postbuildCommandValue, generateDebugSymbolsValue,
+                                     generateManifestValue, enableIncrementalLinkingValue, useRuntimeLibDLLValue, multiProcessorCompilationValue,
+                                     intermediatesPathValue, characterSetValue, architectureTypeValue, fastMathValue, debugInformationFormatValue,
+                                     pluginBinaryCopyStepValue;
 
-        ValueWithDefault vstBinaryLocation, vst3BinaryLocation, rtasBinaryLocation, aaxBinaryLocation, unityPluginBinaryLocation;
+        ValueTreePropertyWithDefault vstBinaryLocation, vst3BinaryLocation, aaxBinaryLocation, lv2BinaryLocation, unityPluginBinaryLocation;
 
         Value architectureValueToListenTo;
 
         //==============================================================================
         void addVisualStudioPluginInstallPathProperties (PropertyListBuilder& props)
         {
-            auto isBuildingAnyPlugins = (project.shouldBuildVST() || project.shouldBuildVST3() || project.shouldBuildRTAS()
+            auto isBuildingAnyPlugins = (project.shouldBuildVST() || project.shouldBuildVST3()
                                           || project.shouldBuildAAX() || project.shouldBuildUnityPlugin());
 
             if (isBuildingAnyPlugins)
@@ -334,15 +360,15 @@ public:
                                                                     1024, false),
                            "The folder in which the compiled VST3 binary should be placed.");
 
-            if (project.shouldBuildRTAS())
-                props.add (new TextPropertyComponentWithEnablement (rtasBinaryLocation, pluginBinaryCopyStepValue, "RTAS Binary Location",
-                                                                    1024, false),
-                           "The folder in which the compiled RTAS binary should be placed.");
-
             if (project.shouldBuildAAX())
                 props.add (new TextPropertyComponentWithEnablement (aaxBinaryLocation, pluginBinaryCopyStepValue, "AAX Binary Location",
                                                                     1024, false),
                            "The folder in which the compiled AAX binary should be placed.");
+
+            if (project.shouldBuildLV2())
+                props.add (new TextPropertyComponentWithEnablement (lv2BinaryLocation, pluginBinaryCopyStepValue, "LV2 Binary Location",
+                                                                    1024, false),
+                           "The folder in which the compiled LV2 binary should be placed.");
 
             if (project.shouldBuildUnityPlugin())
                 props.add (new TextPropertyComponentWithEnablement (unityPluginBinaryLocation, pluginBinaryCopyStepValue, "Unity Binary Location",
@@ -358,14 +384,27 @@ public:
 
         void setPluginBinaryCopyLocationDefaults()
         {
-            vstBinaryLocation.setDefault  ((is64Bit() ? "%ProgramW6432%" : "%programfiles(x86)%") + String ("\\Steinberg\\Vstplugins"));
+            const auto [programsFolderPath, commonsFolderPath] = [&]() -> std::tuple<String, String>
+            {
+                static const std::map<String, std::tuple<String, String>> options
+                {
+                    { "Win32", { "%programfiles(x86)%", "%CommonProgramFiles(x86)%" } },
+                    { "x64",   { "%ProgramW6432%",      "%CommonProgramW6432%"      } },
+                    { "ARM",   { "%programfiles(arm)%", "%CommonProgramFiles(arm)%" } },
+                    { "ARM64", { "%ProgramW6432%",      "%CommonProgramW6432%"      } }
+                };
 
-            auto prefix = is64Bit() ? "%CommonProgramW6432%"
-                                    : "%CommonProgramFiles(x86)%";
+                if (const auto iter = options.find (getArchitectureString()); iter != options.cend())
+                    return iter->second;
 
-            vst3BinaryLocation.setDefault (prefix + String ("\\VST3"));
-            rtasBinaryLocation.setDefault (prefix + String ("\\Digidesign\\DAE\\Plug-Ins"));
-            aaxBinaryLocation.setDefault  (prefix + String ("\\Avid\\Audio\\Plug-Ins"));
+                jassertfalse;
+                return { "%programfiles%", "%CommonProgramFiles%" };
+            }();
+
+            vstBinaryLocation.setDefault  (programsFolderPath + String ("\\Steinberg\\Vstplugins"));
+            vst3BinaryLocation.setDefault (commonsFolderPath + String ("\\VST3"));
+            aaxBinaryLocation.setDefault  (commonsFolderPath + String ("\\Avid\\Audio\\Plug-Ins"));
+            lv2BinaryLocation.setDefault  ("%APPDATA%\\LV2");
         }
 
         void valueChanged (Value&) override
@@ -408,8 +447,7 @@ public:
                     auto* e = configsGroup->createNewChildElement ("ProjectConfiguration");
                     e->setAttribute ("Include", config.createMSVCConfigName());
                     e->createNewChildElement ("Configuration")->addTextElement (config.getName());
-                    e->createNewChildElement ("Platform")->addTextElement (config.is64Bit() ? config.get64BitArchName()
-                                                                                            : config.get32BitArchName());
+                    e->createNewChildElement ("Platform")->addTextElement (config.getArchitectureString());
                 }
             }
 
@@ -511,11 +549,10 @@ public:
                         intdir->addTextElement (build_tools::windowsStylePath (intermediatesPath));
                     }
 
-
                     {
                         auto* targetName = props->createNewChildElement ("TargetName");
                         setConditionAttribute (*targetName, config);
-                        targetName->addTextElement (msBuildEscape (config.getOutputFilename ("", false, type == UnityPlugIn)));
+                        targetName->addTextElement (msBuildEscape (config.getOutputFilename ("", false, type)));
                     }
 
                     {
@@ -541,6 +578,22 @@ public:
             {
                 auto& config = dynamic_cast<const MSVCBuildConfiguration&> (*i);
 
+                enum class EscapeQuotes { no, yes };
+
+                // VS doesn't correctly escape double quotes in preprocessor definitions, so we have
+                // to add our own layer of escapes
+                const auto addIncludePathsAndPreprocessorDefinitions = [this, &config] (XmlElement& xml, EscapeQuotes escapeQuotes)
+                {
+                    auto includePaths = getOwner().getHeaderSearchPaths (config);
+                    includePaths.add ("%(AdditionalIncludeDirectories)");
+                    xml.createNewChildElement ("AdditionalIncludeDirectories")->addTextElement (includePaths.joinIntoString (";"));
+
+                    const auto preprocessorDefs = getPreprocessorDefs (config, ";") + ";%(PreprocessorDefinitions)";
+                    const auto preprocessorDefsEscaped = escapeQuotes == EscapeQuotes::yes ? preprocessorDefs.replace ("\"", "\\\"")
+                                                                                           : preprocessorDefs;
+                    xml.createNewChildElement ("PreprocessorDefinitions")->addTextElement (preprocessorDefsEscaped);
+                };
+
                 bool isDebug = config.isDebug();
 
                 auto* group = projectXml.createNewChildElement ("ItemDefinitionGroup");
@@ -557,7 +610,7 @@ public:
                 }
 
                 bool isUsingEditAndContinue = false;
-                const auto pdbFilename = getOwner().getIntDirFile (config, config.getOutputFilename (".pdb", true, type == UnityPlugIn));
+                const auto pdbFilename = getOwner().getIntDirFile (config, config.getOutputFilename (".pdb", true, type));
 
                 {
                     auto* cl = group->createNewChildElement ("ClCompile");
@@ -567,15 +620,10 @@ public:
                     if (isDebug || config.shouldGenerateDebugSymbols())
                     {
                         cl->createNewChildElement ("DebugInformationFormat")
-                            ->addTextElement (config.getDebugInformationFormatString());
+                          ->addTextElement (config.getDebugInformationFormatString());
                     }
 
-                    auto includePaths = getOwner().getHeaderSearchPaths (config);
-                    includePaths.addArray (getExtraSearchPaths());
-                    includePaths.add ("%(AdditionalIncludeDirectories)");
-
-                    cl->createNewChildElement ("AdditionalIncludeDirectories")->addTextElement (includePaths.joinIntoString (";"));
-                    cl->createNewChildElement ("PreprocessorDefinitions")->addTextElement (getPreprocessorDefs (config, ";") + ";%(PreprocessorDefinitions)");
+                    addIncludePathsAndPreprocessorDefinitions (*cl, EscapeQuotes::no);
 
                     cl->createNewChildElement ("RuntimeLibrary")->addTextElement (config.isUsingRuntimeLibDLL() ? (isDebug ? "MultiThreadedDebugDLL" : "MultiThreadedDLL")
                                                                                                                 : (isDebug ? "MultiThreadedDebug"    : "MultiThreaded"));
@@ -591,7 +639,8 @@ public:
                     if (config.isFastMathEnabled())
                         cl->createNewChildElement ("FloatingPointModel")->addTextElement ("Fast");
 
-                    auto extraFlags = getOwner().replacePreprocessorTokens (config, getOwner().getExtraCompilerFlagsString()).trim();
+                    auto extraFlags = getOwner().replacePreprocessorTokens (config, config.getAllCompilerFlagsString()).trim();
+
                     if (extraFlags.isNotEmpty())
                         cl->createNewChildElement ("AdditionalOptions")->addTextElement (extraFlags + " %(AdditionalOptions)");
 
@@ -604,31 +653,30 @@ public:
 
                 {
                     auto* res = group->createNewChildElement ("ResourceCompile");
-                    res->createNewChildElement ("PreprocessorDefinitions")->addTextElement (isDebug ? "_DEBUG;%(PreprocessorDefinitions)"
-                                                                                                    : "NDEBUG;%(PreprocessorDefinitions)");
+                    addIncludePathsAndPreprocessorDefinitions (*res, EscapeQuotes::yes);
                 }
 
                 auto externalLibraries = getExternalLibraries (config, getOwner().getExternalLibrariesStringArray());
-                auto additionalDependencies = type != SharedCodeTarget && ! externalLibraries.isEmpty()
+                auto additionalDependencies = type != SharedCodeTarget && type != LV2TurtleProgram && ! externalLibraries.isEmpty()
                                                         ? externalLibraries.joinIntoString (";") + ";%(AdditionalDependencies)"
                                                         : String();
 
                 auto librarySearchPaths = config.getLibrarySearchPaths();
-                auto additionalLibraryDirs = type != SharedCodeTarget && librarySearchPaths.size() > 0
+                auto additionalLibraryDirs = type != SharedCodeTarget && type != LV2TurtleProgram && librarySearchPaths.size() > 0
                                                        ? getOwner().replacePreprocessorTokens (config, librarySearchPaths.joinIntoString (";")) + ";%(AdditionalLibraryDirectories)"
                                                        : String();
 
                 {
                     auto* link = group->createNewChildElement ("Link");
-                    link->createNewChildElement ("OutputFile")->addTextElement (getOutputFilePath (config, type == UnityPlugIn));
+                    link->createNewChildElement ("OutputFile")->addTextElement (getOutputFilePath (config));
                     link->createNewChildElement ("SuppressStartupBanner")->addTextElement ("true");
                     link->createNewChildElement ("IgnoreSpecificDefaultLibraries")->addTextElement (isDebug ? "libcmt.lib; msvcrt.lib;;%(IgnoreSpecificDefaultLibraries)"
                                                                                                             : "%(IgnoreSpecificDefaultLibraries)");
                     link->createNewChildElement ("GenerateDebugInformation")->addTextElement ((isDebug || config.shouldGenerateDebugSymbols()) ? "true" : "false");
                     link->createNewChildElement ("ProgramDatabaseFile")->addTextElement (pdbFilename);
-                    link->createNewChildElement ("SubSystem")->addTextElement (type == ConsoleApp ? "Console" : "Windows");
+                    link->createNewChildElement ("SubSystem")->addTextElement (type == ConsoleApp || type == LV2TurtleProgram ? "Console" : "Windows");
 
-                    if (! config.is64Bit())
+                    if (config.getArchitectureString() == "Win32")
                         link->createNewChildElement ("TargetMachine")->addTextElement ("MachineX86");
 
                     if (isUsingEditAndContinue)
@@ -651,12 +699,12 @@ public:
                     if (additionalDependencies.isNotEmpty())
                         link->createNewChildElement ("AdditionalDependencies")->addTextElement (additionalDependencies);
 
-                    auto extraLinkerOptions = getOwner().getExtraLinkerFlagsString();
+                    auto extraLinkerOptions = config.getAllLinkerFlagsString();
                     if (extraLinkerOptions.isNotEmpty())
                         link->createNewChildElement ("AdditionalOptions")->addTextElement (getOwner().replacePreprocessorTokens (config, extraLinkerOptions).trim()
                                                                                            + " %(AdditionalOptions)");
 
-                    auto delayLoadedDLLs = getDelayLoadedDLLs();
+                    auto delayLoadedDLLs = getOwner().msvcDelayLoadedDLLs;
                     if (delayLoadedDLLs.isNotEmpty())
                         link->createNewChildElement ("DelayLoadDLLs")->addTextElement (delayLoadedDLLs);
 
@@ -669,10 +717,10 @@ public:
                 {
                     auto* bsc = group->createNewChildElement ("Bscmake");
                     bsc->createNewChildElement ("SuppressStartupBanner")->addTextElement ("true");
-                    bsc->createNewChildElement ("OutputFile")->addTextElement (getOwner().getIntDirFile (config, config.getOutputFilename (".bsc", true, type == UnityPlugIn)));
+                    bsc->createNewChildElement ("OutputFile")->addTextElement (getOwner().getIntDirFile (config, config.getOutputFilename (".bsc", true, type)));
                 }
 
-                if (type != SharedCodeTarget)
+                if (type != SharedCodeTarget && type != LV2TurtleProgram)
                 {
                     auto* lib = group->createNewChildElement ("Lib");
 
@@ -693,7 +741,7 @@ public:
                                                                build_tools::RelativePath::buildTargetFolder).toWindowsStyle());
                 }
 
-                if (getTargetFileType() == staticLibrary && ! config.is64Bit())
+                if (getTargetFileType() == staticLibrary && config.getArchitectureString() == "Win32")
                 {
                     auto* lib = group->createNewChildElement ("Lib");
                     lib->createNewChildElement ("TargetMachine")->addTextElement ("MachineX86");
@@ -726,6 +774,13 @@ public:
 
                     if (group.getNumChildren() > 0)
                         addFilesToCompile (group, *cppFiles, *headerFiles, *otherFilesGroup);
+                }
+
+                if (type == LV2TurtleProgram)
+                {
+                    const auto location = owner.rebaseFromProjectFolderToBuildTarget (owner.getLV2TurtleDumpProgramSource())
+                                               .toWindowsStyle();
+                    cppFiles->createNewChildElement ("ClCompile")->setAttribute ("Include", location);
                 }
             }
 
@@ -857,12 +912,9 @@ public:
                     auto* e = cpps.createNewChildElement ("ClCompile");
                     e->setAttribute ("Include", path.toWindowsStyle());
 
-                    if (shouldUseStdCall (path))
-                        e->createNewChildElement ("CallingConvention")->addTextElement ("StdCall");
-
                     if (projectItem.shouldBeCompiled())
                     {
-                        auto extraCompilerFlags = owner.compilerFlagSchemesMap[projectItem.getCompilerFlagSchemeString()].get().toString();
+                        auto extraCompilerFlags = getOwner().getCompilerFlagsForProjectItem (projectItem);
 
                         if (shouldAddBigobjFlag (path))
                         {
@@ -1057,8 +1109,12 @@ public:
 
         String getConfigTargetPath (const BuildConfiguration& config) const
         {
-            auto solutionTargetFolder = getSolutionTargetPath (config);
-            return solutionTargetFolder + "\\" + getName();
+            const auto result = getSolutionTargetPath (config) + "\\" + getName();
+
+            if (type == LV2PlugIn)
+                return result + "\\" + config.getTargetBinaryNameString() + ".lv2";
+
+            return result;
         }
 
         String getIntermediatesPath (const MSVCBuildConfiguration& config) const
@@ -1095,19 +1151,11 @@ public:
             {
                 if (type == VST3PlugIn)  return ".vst3";
                 if (type == AAXPlugIn)   return ".aaxdll";
-                if (type == RTASPlugIn)  return ".dpm";
 
                 return ".dll";
             }
 
             return {};
-        }
-
-        XmlElement* createToolElement (XmlElement& parent, const String& toolName) const
-        {
-            auto* e = parent.createNewChildElement ("Tool");
-            e->setAttribute ("Name", toolName);
-            return e;
         }
 
         String getPreprocessorDefs (const BuildConfiguration& config, const String& joinString) const
@@ -1170,13 +1218,13 @@ public:
                 build_tools::RelativePath bundleScript  = aaxSDK.getChildFile ("Utilities").getChildFile ("CreatePackage.bat");
                 build_tools::RelativePath iconFilePath  = getAAXIconFile();
 
-                auto outputFilename = config.getOutputFilename (".aaxplugin", true, false);
+                auto outputFilename = config.getOutputFilename (".aaxplugin", true, type);
                 auto bundleDir      = getOwner().getOutDirFile (config, outputFilename);
                 auto bundleContents = bundleDir + "\\Contents";
-                auto archDir        = bundleContents + String ("\\") + (config.is64Bit() ? "x64" : "Win32");
+                auto archDir        = bundleContents + String ("\\") + config.getArchitectureString();
                 auto executablePath = archDir + String ("\\") + outputFilename;
 
-                auto pkgScript = String ("copy /Y ") + getOutputFilePath (config, false).quoted() + String (" ") + executablePath.quoted() + String ("\r\ncall ")
+                auto pkgScript = String ("copy /Y ") + getOutputFilePath (config).quoted() + String (" ") + executablePath.quoted() + String ("\r\ncall ")
                                      + createRebasedPath (bundleScript) + String (" ") + archDir.quoted() + String (" ") + createRebasedPath (iconFilePath);
 
                 if (config.isPluginBinaryCopyStepEnabled())
@@ -1185,11 +1233,12 @@ public:
 
                 return pkgScript;
             }
-            else if (type == UnityPlugIn)
+
+            if (type == UnityPlugIn)
             {
                 build_tools::RelativePath scriptPath (config.project.getGeneratedCodeFolder().getChildFile (config.project.getUnityScriptName()),
-                                                    getOwner().getTargetFolder(),
-                                                    build_tools::RelativePath::projectFolder);
+                                                      getOwner().getTargetFolder(),
+                                                      build_tools::RelativePath::projectFolder);
 
                 auto pkgScript = String ("copy /Y ") + scriptPath.toWindowsStyle().quoted() + " \"$(OutDir)\"";
 
@@ -1203,13 +1252,40 @@ public:
 
                 return pkgScript;
             }
-            else if (config.isPluginBinaryCopyStepEnabled())
+
+            if (type == LV2PlugIn)
+            {
+                const auto* writerTarget = [&]() -> MSVCTargetBase*
+                {
+                    for (auto* target : owner.targets)
+                        if (target->type == LV2TurtleProgram)
+                            return target;
+
+                    return nullptr;
+                }();
+
+                const auto writer = writerTarget->getConfigTargetPath (config)
+                                  + "\\"
+                                  + writerTarget->getBinaryNameWithSuffix (config);
+
+                const auto copyScript = [&]() -> String
+                {
+                    if (! config.isPluginBinaryCopyStepEnabled())
+                        return "";
+
+                    return "xcopy /E /H /I /K /R /Y \"$(OutDir)\" \"" + config.getLV2BinaryLocationString()
+                         + '\\' + config.getTargetBinaryNameString() + ".lv2\"\r\n";
+                }();
+
+                return writer.quoted() + " \"$(OutDir)$(TargetFileName)\"\r\n" + copyScript;
+            }
+
+            if (config.isPluginBinaryCopyStepEnabled())
             {
                 auto copyScript = String ("copy /Y \"$(OutDir)$(TargetFileName)\"") + String (" \"$COPYDIR$\\$(TargetFileName)\"");
 
                 if (type == VSTPlugIn)     return copyScript.replace ("$COPYDIR$", config.getVSTBinaryLocationString());
                 if (type == VST3PlugIn)    return copyScript.replace ("$COPYDIR$", config.getVST3BinaryLocationString());
-                if (type == RTASPlugIn)    return copyScript.replace ("$COPYDIR$", config.getRTASBinaryLocationString());
             }
 
             return {};
@@ -1221,9 +1297,9 @@ public:
             {
                 String script;
 
-                auto bundleDir      = getOwner().getOutDirFile (config, config.getOutputFilename (".aaxplugin", false, false));
+                auto bundleDir      = getOwner().getOutDirFile (config, config.getOutputFilename (".aaxplugin", false, type));
                 auto bundleContents = bundleDir + "\\Contents";
-                auto archDir        = bundleContents + String ("\\") + (config.is64Bit() ? "x64" : "Win32");
+                auto archDir        = bundleContents + String ("\\") + config.getArchitectureString();
 
                 for (auto& folder : StringArray { bundleDir, bundleContents, archDir })
                     script += String ("if not exist \"") + folder + String ("\" mkdir \"") + folder + String ("\"\r\n");
@@ -1257,113 +1333,50 @@ public:
                 auto aaxLibsFolder = build_tools::RelativePath (owner.getAAXPathString(), build_tools::RelativePath::projectFolder).getChildFile ("Libs");
                 defines.set ("JucePlugin_AAXLibs_path", createRebasedPath (aaxLibsFolder));
             }
-            else if (type == RTASPlugIn)
-            {
-                build_tools::RelativePath rtasFolder (owner.getRTASPathString(), build_tools::RelativePath::projectFolder);
-                defines.set ("JucePlugin_WinBag_path", createRebasedPath (rtasFolder.getChildFile ("WinBag")));
-            }
         }
 
-        String getExtraLinkerFlags() const
+        String getBinaryNameWithSuffix (const MSVCBuildConfiguration& config) const
         {
-            if (type == RTASPlugIn)
-                return "/FORCE:multiple";
-
-            return {};
+            return config.getOutputFilename (getTargetSuffix(), true, type);
         }
 
-        StringArray getExtraSearchPaths() const
+        String getOutputFilePath (const MSVCBuildConfiguration& config) const
         {
-            StringArray searchPaths;
-            if (type == RTASPlugIn)
-            {
-                build_tools::RelativePath rtasFolder (owner.getRTASPathString(), build_tools::RelativePath::projectFolder);
-
-                static const char* p[] = { "AlturaPorts/TDMPlugins/PluginLibrary/EffectClasses",
-                                           "AlturaPorts/TDMPlugins/PluginLibrary/ProcessClasses",
-                                           "AlturaPorts/TDMPlugins/PluginLibrary/ProcessClasses/Interfaces",
-                                           "AlturaPorts/TDMPlugins/PluginLibrary/Utilities",
-                                           "AlturaPorts/TDMPlugins/PluginLibrary/RTASP_Adapt",
-                                           "AlturaPorts/TDMPlugins/PluginLibrary/CoreClasses",
-                                           "AlturaPorts/TDMPlugins/PluginLibrary/Controls",
-                                           "AlturaPorts/TDMPlugins/PluginLibrary/Meters",
-                                           "AlturaPorts/TDMPlugins/PluginLibrary/ViewClasses",
-                                           "AlturaPorts/TDMPlugins/PluginLibrary/DSPClasses",
-                                           "AlturaPorts/TDMPlugins/PluginLibrary/Interfaces",
-                                           "AlturaPorts/TDMPlugins/common",
-                                           "AlturaPorts/TDMPlugins/common/Platform",
-                                           "AlturaPorts/TDMPlugins/common/Macros",
-                                           "AlturaPorts/TDMPlugins/SignalProcessing/Public",
-                                           "AlturaPorts/TDMPlugIns/DSPManager/Interfaces",
-                                           "AlturaPorts/SADriver/Interfaces",
-                                           "AlturaPorts/DigiPublic/Interfaces",
-                                           "AlturaPorts/DigiPublic",
-                                           "AlturaPorts/Fic/Interfaces/DAEClient",
-                                           "AlturaPorts/NewFileLibs/Cmn",
-                                           "AlturaPorts/NewFileLibs/DOA",
-                                           "AlturaPorts/AlturaSource/PPC_H",
-                                           "AlturaPorts/AlturaSource/AppSupport",
-                                           "AvidCode/AVX2sdk/AVX/avx2/avx2sdk/inc",
-                                           "xplat/AVX/avx2/avx2sdk/inc" };
-
-                for (auto* path : p)
-                    searchPaths.add (createRebasedPath (rtasFolder.getChildFile (path)));
-            }
-
-            return searchPaths;
-        }
-
-        String getBinaryNameWithSuffix (const MSVCBuildConfiguration& config, bool forceUnityPrefix) const
-        {
-            return config.getOutputFilename (getTargetSuffix(), true, forceUnityPrefix);
-        }
-
-        String getOutputFilePath (const MSVCBuildConfiguration& config, bool forceUnityPrefix) const
-        {
-            return getOwner().getOutDirFile (config, getBinaryNameWithSuffix (config, forceUnityPrefix));
+            return getOwner().getOutDirFile (config, getBinaryNameWithSuffix (config));
         }
 
         StringArray getLibrarySearchPaths (const BuildConfiguration& config) const
         {
             auto librarySearchPaths = config.getLibrarySearchPaths();
 
-            if (type != SharedCodeTarget)
+            if (type != SharedCodeTarget && type != LV2TurtleProgram)
                 if (auto* shared = getOwner().getSharedCodeTarget())
                     librarySearchPaths.add (shared->getConfigTargetPath (config));
 
             return librarySearchPaths;
         }
 
+        /*  Libraries specified in the Projucer don't get escaped automatically.
+            To include a special character in the name of a library,
+            you must use the appropriate escape code instead.
+            Module and shared code library names are not preprocessed.
+            Special characters in the names of these libraries will be toEscape
+            as appropriate.
+        */
         StringArray getExternalLibraries (const MSVCBuildConfiguration& config, const StringArray& otherLibs) const
         {
-            const auto sharedCodeLib = [&]() -> StringArray
-            {
-                if (type != SharedCodeTarget)
-                    if (auto* shared = getOwner().getSharedCodeTarget())
-                        return { shared->getBinaryNameWithSuffix (config, false) };
-
-                return {};
-            }();
-
             auto result = otherLibs;
-            result.addArray (getOwner().getModuleLibs());
-            result.addArray (sharedCodeLib);
 
             for (auto& i : result)
-                i = msBuildEscape (getOwner().replacePreprocessorTokens (config, i).trim());
+                i = getOwner().replacePreprocessorTokens (config, i).trim();
+
+            result.addArray (msBuildEscape (getOwner().getModuleLibs()));
+
+            if (type != SharedCodeTarget && type != LV2TurtleProgram)
+                if (auto* shared = getOwner().getSharedCodeTarget())
+                    result.add (msBuildEscape (shared->getBinaryNameWithSuffix (config)));
 
             return result;
-        }
-
-        String getDelayLoadedDLLs() const
-        {
-            auto delayLoadedDLLs = getOwner().msvcDelayLoadedDLLs;
-
-            if (type == RTASPlugIn)
-                delayLoadedDLLs += "DAE.dll; DigiExt.dll; DSI.dll; PluginLib.dll; "
-                    "DSPManager.dll; DSPManager.dll; DSPManagerClientLib.dll; RTASClientLib.dll";
-
-            return delayLoadedDLLs;
         }
 
         String getModuleDefinitions (const MSVCBuildConfiguration& config) const
@@ -1372,19 +1385,6 @@ public:
 
             if (moduleDefinitions.isNotEmpty())
                 return moduleDefinitions;
-
-            if (type == RTASPlugIn)
-            {
-                auto& exp = getOwner();
-
-                auto moduleDefPath
-                    = build_tools::RelativePath (exp.getPathForModuleString ("juce_audio_plugin_client"), build_tools::RelativePath::projectFolder)
-                         .getChildFile ("juce_audio_plugin_client").getChildFile ("RTAS").getChildFile ("juce_RTAS_WinExports.def");
-
-                return prependDot (moduleDefPath.rebased (exp.getProject().getProjectFolder(),
-                                                          exp.getTargetFolder(),
-                                                          build_tools::RelativePath::buildTargetFolder).toWindowsStyle());
-            }
 
             return {};
         }
@@ -1426,7 +1426,6 @@ public:
     bool isCodeBlocks() const override                       { return false; }
     bool isMakefile() const override                         { return false; }
     bool isAndroidStudio() const override                    { return false; }
-    bool isCLion() const override                            { return false; }
 
     bool isAndroid() const override                          { return false; }
     bool isWindows() const override                          { return true; }
@@ -1440,24 +1439,27 @@ public:
 
     bool supportsTargetType (build_tools::ProjectType::Target::Type type) const override
     {
+        using Target = build_tools::ProjectType::Target;
+
         switch (type)
         {
-        case build_tools::ProjectType::Target::StandalonePlugIn:
-        case build_tools::ProjectType::Target::GUIApp:
-        case build_tools::ProjectType::Target::ConsoleApp:
-        case build_tools::ProjectType::Target::StaticLibrary:
-        case build_tools::ProjectType::Target::SharedCodeTarget:
-        case build_tools::ProjectType::Target::AggregateTarget:
-        case build_tools::ProjectType::Target::VSTPlugIn:
-        case build_tools::ProjectType::Target::VST3PlugIn:
-        case build_tools::ProjectType::Target::AAXPlugIn:
-        case build_tools::ProjectType::Target::RTASPlugIn:
-        case build_tools::ProjectType::Target::UnityPlugIn:
-        case build_tools::ProjectType::Target::DynamicLibrary:
+        case Target::StandalonePlugIn:
+        case Target::GUIApp:
+        case Target::ConsoleApp:
+        case Target::StaticLibrary:
+        case Target::SharedCodeTarget:
+        case Target::AggregateTarget:
+        case Target::VSTPlugIn:
+        case Target::VST3PlugIn:
+        case Target::AAXPlugIn:
+        case Target::UnityPlugIn:
+        case Target::LV2PlugIn:
+        case Target::LV2TurtleProgram:
+        case Target::DynamicLibrary:
             return true;
-        case build_tools::ProjectType::Target::AudioUnitPlugIn:
-        case build_tools::ProjectType::Target::AudioUnitv3PlugIn:
-        case build_tools::ProjectType::Target::unspecified:
+        case Target::AudioUnitPlugIn:
+        case Target::AudioUnitv3PlugIn:
+        case Target::unspecified:
         default:
             break;
         }
@@ -1478,7 +1480,7 @@ public:
     bool launchProject() override
     {
        #if JUCE_WINDOWS
-        return getIDEProjectFile().startAsProcess();
+        return getSLNFile().startAsProcess();
        #else
         return false;
        #endif
@@ -1491,11 +1493,6 @@ public:
        #else
         return false;
        #endif
-    }
-
-    File getIDEProjectFile() const override
-    {
-        return getSLNFile();
     }
 
     void createExporterProperties (PropertyListBuilder& props) override
@@ -1602,12 +1599,12 @@ protected:
     mutable File rcFile, iconFile, packagesConfigFile;
     OwnedArray<MSVCTargetBase> targets;
 
-    ValueWithDefault IPPLibraryValue,
-                     IPP1ALibraryValue,
-                     MKL1ALibraryValue,
-                     platformToolsetValue,
-                     targetPlatformVersion,
-                     manifestFileValue;
+    ValueTreePropertyWithDefault IPPLibraryValue,
+                                 IPP1ALibraryValue,
+                                 MKL1ALibraryValue,
+                                 platformToolsetValue,
+                                 targetPlatformVersion,
+                                 manifestFileValue;
 
     File getProjectFile (const String& extension, const String& target) const
     {
@@ -1644,14 +1641,11 @@ protected:
         return getCleanedStringArray (searchPaths);
     }
 
-    String getSharedCodeGuid() const
+    String getTargetGuid (MSVCTargetBase::Type type) const
     {
-        String sharedCodeGuid;
-
-        for (int i = 0; i < targets.size(); ++i)
-            if (auto* target = targets[i])
-                if (target->type == build_tools::ProjectType::Target::SharedCodeTarget)
-                    return target->getProjectGuid();
+        for (auto* target : targets)
+            if (target != nullptr && target->type == type)
+                return target->getProjectGuid();
 
         return {};
     }
@@ -1659,7 +1653,8 @@ protected:
     //==============================================================================
     void writeProjectDependencies (OutputStream& out) const
     {
-        auto sharedCodeGuid = getSharedCodeGuid();
+        const auto sharedCodeGuid = getTargetGuid (MSVCTargetBase::SharedCodeTarget);
+        const auto turtleGuid     = getTargetGuid (MSVCTargetBase::LV2TurtleProgram);
 
         for (int addingOtherTargets = 0; addingOtherTargets < (sharedCodeGuid.isNotEmpty() ? 2 : 1); ++addingOtherTargets)
         {
@@ -1667,16 +1662,24 @@ protected:
             {
                 if (auto* target = targets[i])
                 {
-                    if (sharedCodeGuid.isEmpty() || (addingOtherTargets != 0) == (target->type != build_tools::ProjectType::Target::StandalonePlugIn))
+                    if (sharedCodeGuid.isEmpty() || (addingOtherTargets != 0) == (target->type != MSVCTargetBase::StandalonePlugIn))
                     {
                         out << "Project(\"{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}\") = \"" << projectName << " - "
                             << target->getName() << "\", \""
                             << target->getVCProjFile().getFileName() << "\", \"" << target->getProjectGuid() << '"' << newLine;
 
-                        if (sharedCodeGuid.isNotEmpty() && target->type != build_tools::ProjectType::Target::SharedCodeTarget)
+                        if (sharedCodeGuid.isNotEmpty()
+                            && target->type != MSVCTargetBase::SharedCodeTarget
+                            && target->type != MSVCTargetBase::LV2TurtleProgram)
+                        {
                             out << "\tProjectSection(ProjectDependencies) = postProject" << newLine
-                                << "\t\t" << sharedCodeGuid << " = " << sharedCodeGuid << newLine
-                                << "\tEndProjectSection" << newLine;
+                                << "\t\t" << sharedCodeGuid << " = " << sharedCodeGuid << newLine;
+
+                            if (target->type == MSVCTargetBase::LV2PlugIn && turtleGuid.isNotEmpty())
+                                out << "\t\t" << turtleGuid << " = " << turtleGuid << newLine;
+
+                            out << "\tEndProjectSection" << newLine;
+                        }
 
                         out << "EndProject" << newLine;
                     }
@@ -1786,14 +1789,12 @@ protected:
                                                       : (".\\" + filename);
     }
 
-    static bool shouldUseStdCall (const build_tools::RelativePath& path)
-    {
-        return path.getFileNameWithoutExtension().startsWithIgnoreCase ("include_juce_audio_plugin_client_RTAS_");
-    }
-
     static bool shouldAddBigobjFlag (const build_tools::RelativePath& path)
     {
-        return path.getFileNameWithoutExtension().equalsIgnoreCase ("include_juce_gui_basics");
+        const auto name = path.getFileNameWithoutExtension();
+
+        return name.equalsIgnoreCase ("include_juce_gui_basics")
+            || name.equalsIgnoreCase ("include_juce_audio_processors");
     }
 
     StringArray getModuleLibs() const
@@ -1807,51 +1808,6 @@ protected:
     }
 
     JUCE_DECLARE_NON_COPYABLE (MSVCProjectExporterBase)
-};
-
-//==============================================================================
-class MSVCProjectExporterVC2015  : public MSVCProjectExporterBase
-{
-public:
-    MSVCProjectExporterVC2015 (Project& p, const ValueTree& t)
-        : MSVCProjectExporterBase (p, t, getTargetFolderName())
-    {
-        name = getDisplayName();
-
-        targetPlatformVersion.setDefault (getDefaultWindowsTargetPlatformVersion());
-        platformToolsetValue.setDefault (getDefaultToolset());
-    }
-
-    static String getDisplayName()        { return "Visual Studio 2015"; }
-    static String getValueTreeTypeName()  { return "VS2015"; }
-    static String getTargetFolderName()   { return "VisualStudio2015"; }
-
-    Identifier getExporterIdentifier() const override { return getValueTreeTypeName(); }
-
-    int getVisualStudioVersion() const override                      { return 14; }
-    String getSolutionComment() const override                       { return "# Visual Studio 14"; }
-    String getToolsVersion() const override                          { return "14.0"; }
-    String getDefaultToolset() const override                        { return "v140"; }
-    String getDefaultWindowsTargetPlatformVersion() const override   { return "8.1"; }
-
-    static MSVCProjectExporterVC2015* createForSettings (Project& projectToUse, const ValueTree& settingsToUse)
-    {
-        if (settingsToUse.hasType (getValueTreeTypeName()))
-            return new MSVCProjectExporterVC2015 (projectToUse, settingsToUse);
-
-        return nullptr;
-    }
-
-    void createExporterProperties (PropertyListBuilder& props) override
-    {
-        static const char* toolsetNames[] = { "v140", "v140_xp", "CTP_Nov2013" };
-        const var toolsets[]              = { "v140", "v140_xp", "CTP_Nov2013" };
-        addToolsetProperty (props, toolsetNames, toolsets, numElementsInArray (toolsets));
-
-        MSVCProjectExporterBase::createExporterProperties (props);
-    }
-
-    JUCE_DECLARE_NON_COPYABLE (MSVCProjectExporterVC2015)
 };
 
 //==============================================================================
@@ -1889,10 +1845,7 @@ public:
 
     void createExporterProperties (PropertyListBuilder& props) override
     {
-        static const char* toolsetNames[] = { "v140", "v140_xp", "v141", "v141_xp" };
-        const var toolsets[]              = { "v140", "v140_xp", "v141", "v141_xp" };
-        addToolsetProperty (props, toolsetNames, toolsets, numElementsInArray (toolsets));
-
+        addToolsetProperty (props, { "v140", "v140_xp", "v141", "v141_xp" });
         MSVCProjectExporterBase::createExporterProperties (props);
     }
 
@@ -1934,10 +1887,7 @@ public:
 
     void createExporterProperties (PropertyListBuilder& props) override
     {
-        static const char* toolsetNames[] = { "v140", "v140_xp", "v141", "v141_xp", "v142" };
-        const var toolsets[]              = { "v140", "v140_xp", "v141", "v141_xp", "v142" };
-        addToolsetProperty (props, toolsetNames, toolsets, numElementsInArray (toolsets));
-
+        addToolsetProperty (props, { "v140", "v140_xp", "v141", "v141_xp", "v142", "ClangCL" });
         MSVCProjectExporterBase::createExporterProperties (props);
     }
 
@@ -1979,10 +1929,7 @@ public:
 
     void createExporterProperties (PropertyListBuilder& props) override
     {
-        static const char* toolsetNames[] = { "v140", "v140_xp", "v141", "v141_xp", "v142", "v143" };
-        const var toolsets[]              = { "v140", "v140_xp", "v141", "v141_xp", "v142", "v143" };
-        addToolsetProperty (props, toolsetNames, toolsets, numElementsInArray (toolsets));
-
+        addToolsetProperty (props, { "v140", "v140_xp", "v141", "v141_xp", "v142", "v143", "ClangCL" });
         MSVCProjectExporterBase::createExporterProperties (props);
     }
 
