@@ -658,15 +658,18 @@ bool JUCE_CALLTYPE NativeMessageBox::showOkCancelBox(MessageBoxIconType /*iconTy
 
 int JUCE_CALLTYPE NativeMessageBox::showYesNoCancelBox(MessageBoxIconType /*iconType*/,
                                                         const String& title, const String& message,
+                                                       const String& button1Text,
+                                                       const String& button2Text,
+                                                       const String& button3Text,
                                                        Component* /*associatedComponent*/,
                                                        ModalComponentManager::Callback* callback)
 {
     return showDialog(MessageBoxOptions()
                           .withTitle(title)
                           .withMessage(message)
-                          .withButton(TRANS("Yes"))
-                          .withButton(TRANS("No"))
-                          .withButton(TRANS("Cancel")),
+                          .withButton(button1Text)
+                          .withButton(button2Text)
+                          .withButton(button3Text),
                        callback, AlertWindowMappings::yesNoCancel);
 }
 

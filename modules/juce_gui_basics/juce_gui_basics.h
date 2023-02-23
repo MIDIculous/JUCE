@@ -45,7 +45,7 @@
   dependencies:       juce_graphics juce_data_structures
   OSXFrameworks:      Cocoa QuartzCore
   WeakOSXFrameworks:  Metal MetalKit
-  iOSFrameworks:      CoreServices UIKit
+  iOSFrameworks:      CoreServices StoreKit UIKit
   WeakiOSFrameworks:  Metal MetalKit
   mingwLibs:          dxgi
 
