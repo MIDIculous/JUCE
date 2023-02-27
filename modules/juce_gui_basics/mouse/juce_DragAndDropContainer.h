@@ -215,7 +215,6 @@ public:
     static bool performExternalDragDropOfText (const String& text, Component* sourceComponent = nullptr,
                                                std::function<void()> callback = nullptr);
 
-protected:
     /** Override this if you want to be able to perform an external drag of a set of files
         when the user drags outside of this container component.
 
