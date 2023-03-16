@@ -151,8 +151,8 @@ public:
         @param event   details about the mouse event
         @param wheel   details about the wheel movement
     */
-    virtual void mouseWheelMove (const MouseEvent& event,
-                                 const MouseWheelDetails& wheel);
+    virtual void mouseWheelMove (const MouseEvent&,
+                                 const MouseWheelDetails&) {}
 
     /** Called when a pinch-to-zoom mouse-gesture is used.
 
