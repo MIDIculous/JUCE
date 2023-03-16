@@ -199,7 +199,8 @@ public:
 
             updateText();
             owner.repaint();
-            updatePopupDisplay (newValue);
+            // We have to get the current value again here (and not just use newValue), because it may have been changed while assigning currentValue = newValue. For example, by linking multiple parameters together, or constraining the value from outside.
+            updatePopupDisplay (currentValue.getValue());
 
             triggerChangeMessage (notification);
         }
