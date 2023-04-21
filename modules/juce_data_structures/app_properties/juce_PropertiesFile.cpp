@@ -130,8 +130,14 @@ bool PropertiesFile::reload()
 {
     ProcessScopedLock pl (createProcessLock());
 
-    if (pl != nullptr && ! pl->isLocked())
+    if (pl != nullptr && ! pl->isLocked()) {
+        Logger::writeToLog("PropertiesFile::reload() ERROR: Could not lock InterProcessLock!");
+        jassertfalse;
         return false; // locking failure..
+    }
+    
+    if (!file.exists())
+        Logger::writeToLog("PropertiesFile::reload(): File doesn't exist.");
 
     loadedOk = (! file.exists()) || loadAsBinary() || loadAsXml();
     return loadedOk;
@@ -223,14 +229,21 @@ bool PropertiesFile::saveAsXml()
 
     ProcessScopedLock pl (createProcessLock());
 
-    if (pl != nullptr && ! pl->isLocked())
+    if (pl != nullptr && ! pl->isLocked()) {
+        Logger::writeToLog("PropertiesFile::saveAsXml() ERROR: Could not lock InterProcessLock!");
+        jassertfalse;
         return false; // locking failure..
+    }
 
     if (doc.writeTo (file, {}))
     {
+        Logger::writeToLog("PropertiesFile::saveAsXml(): Wrote XML:" + String(newLine) + "########" + String(newLine) + doc.toString() + String(newLine) + "########");
+        Logger::writeToLog("PropertiesFile::saveAsXml(): XML File contents after saving:" + String(newLine) + "########" + String(newLine) + file.loadFileAsString() + String(newLine) + "########");
         needsWriting = false;
         return true;
     }
+    
+    Logger::writeToLog("PropertiesFile::saveAsXml() ERROR: XmlElement::writeTo() returned false.");
 
     return false;
 }
