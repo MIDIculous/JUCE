@@ -787,30 +787,53 @@ bool File::replaceWithText (const String& textToWrite, bool asUnicode, bool writ
 bool File::replaceContents(const std::function<bool(const File&)>& function) const
 {
     const TemporaryFile tempFile (*this, TemporaryFile::useHiddenFile);
-    if (function(tempFile.getFile()) && tempFile.overwriteTargetFileWithTemporary())
+    if (function(tempFile.getFile()) && tempFile.overwriteTargetFileWithTemporary()) {
+        Logger::writeToLog("File::replaceContents(): Normal save (using TemporaryFile) succeeded for file: " + getFullPathName());
         return true;
+    }
     
 #if !JUCE_IOS
     return false;
 #endif
+    
+    Logger::writeToLog("File::replaceContents(): Normal save (using TemporaryFile) failed for file: " + getFullPathName() + ". Using backup+truncate...");
     
     // Using a temporary sibling file doesn't work on iOS when writing outside of the app sandbox. In this case, try writing to the destination file directly.
     
     // Try to create a backup of the current file contents, if it's reasonably small. In case something goes wrong.
     MemoryBlock backup;
     const auto size = getSize();
-    if (existsAsFile() && size > 0 && size <= 10 * 1024 * 1024)
-        loadFileAsData(backup);
+    if (existsAsFile() && size > 0 && size <= 10 * 1024 * 1024) {
+        if (loadFileAsData(backup))
+            Logger::writeToLog("File::replaceContents(): Created backup for file: " + getFullPathName());
+        else
+            Logger::writeToLog("File::replaceContents(): ERROR creating backup for file: " + getFullPathName());
+    }
+    else {
+        Logger::writeToLog("File::replaceContents(): Not creating backup for file (too big): " + getFullPathName());
+    }
     
     const auto truncate = [f = *this, size] {
-        if (size == 0)
+        if (size == 0) {
+            Logger::writeToLog("File::replaceContents(): Truncate not needed for file (size is 0): " + f.getFullPathName());
             return true;
+        }
         
         FileOutputStream outputStream(f, /* bufferSizeToUse: */ 16);
-        if (outputStream.failedToOpen() || outputStream.truncate().failed())
+        if (outputStream.failedToOpen()) {
+            Logger::writeToLog("File::replaceContents(): ERROR opening FileOutputStream for truncating file: " + f.getFullPathName());
             return false;
+        }
+        else {
+            const auto result = outputStream.truncate();
+            if (result.failed()) {
+                Logger::writeToLog("File::replaceContents(): ERROR truncating file: " + f.getFullPathName() + ". Error: " + result.getErrorMessage());
+                return false;
+            }
+        }
         
         outputStream.flush();
+        Logger::writeToLog("File::replaceContents(): Truncate succeeded for file: " + f.getFullPathName() + ". Size is now: " + String(f.getSize()));
         return true;
     };
     
@@ -820,9 +843,26 @@ bool File::replaceContents(const std::function<bool(const File&)>& function) con
     if (function(*this))
         return true;
     
+    Logger::writeToLog("File::replaceContents(): Callback returned false for file: " + getFullPathName());
+    
     // Try restoring the backup (if any):
-    if (backup.getSize() > 0 && truncate())
-        appendData(backup.getData(), backup.getSize());
+    if (backup.getSize() > 0) {
+        Logger::writeToLog("File::replaceContents(): Restoring backup for file: " + getFullPathName() + "...");
+        
+        if (truncate()) {
+            Logger::writeToLog("File::replaceContents(): Truncate successful before restoring backup for file: " + getFullPathName());
+            
+            if (appendData(backup.getData(), backup.getSize()))
+                Logger::writeToLog("File::replaceContents(): Successfully restored backup for file: " + getFullPathName());
+            else
+                Logger::writeToLog("File::replaceContents(): ERROR restoring backup for file: " + getFullPathName());
+        }
+        else {
+            Logger::writeToLog("File::replaceContents(): ERROR truncating before restoring backup for file: " + getFullPathName());
+        }
+    }
+    
+    Logger::writeToLog("File::replaceContents(): Failed for file: " + getFullPathName());
     
     return false;
 }

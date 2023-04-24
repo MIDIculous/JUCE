@@ -406,14 +406,21 @@ void XmlElement::writeTo (OutputStream& output, const TextFormat& options) const
 
 bool XmlElement::writeTo (const File& destinationFile, const TextFormat& options) const
 {
-    return destinationFile.replaceContents([this, &options](const auto& fileToWrite) {
+    return destinationFile.replaceContents([this, &destinationFile, &options](const auto& fileToWrite) {
         FileOutputStream out (fileToWrite);
 
-        if (! out.openedOk())
+        if (! out.openedOk()) {
+            Logger::writeToLog("XmlElement::writeTo(): ERROR opening FileOutputStream for file: " + destinationFile.getFullPathName() + ". Error: " + out.getStatus().getErrorMessage());
             return false;
+        }
 
         writeTo (out, options);
         out.flush(); // (called explicitly to force an fsync on posix)
+        
+        if (out.getStatus().failed())
+            Logger::writeToLog("XmlElement::writeTo(): ERROR after write+flush for file: " + destinationFile.getFullPathName() + ". Error: " + out.getStatus().getErrorMessage());
+        else
+            Logger::writeToLog("XmlElement::writeTo(): Write+flush successful for file: " + destinationFile.getFullPathName());
 
         return out.getStatus().wasOk();
     });

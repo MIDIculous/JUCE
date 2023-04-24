@@ -234,11 +234,31 @@ bool PropertiesFile::saveAsXml()
         jassertfalse;
         return false; // locking failure..
     }
-
+    
     if (doc.writeTo (file, {}))
     {
         Logger::writeToLog("PropertiesFile::saveAsXml(): Wrote XML:" + String(newLine) + "########" + String(newLine) + doc.toString() + String(newLine) + "########");
-        Logger::writeToLog("PropertiesFile::saveAsXml(): XML File contents after saving:" + String(newLine) + "########" + String(newLine) + file.loadFileAsString() + String(newLine) + "########");
+        
+        if (!file.existsAsFile()) {
+            Logger::writeToLog("PropertiesFile::saveAsXml() ERROR: XML File doesn't exist after saving!");
+        }
+        else {
+            FileInputStream inputStream(file);
+            if (inputStream.failedToOpen() || inputStream.getStatus().failed()) {
+                Logger::writeToLog("PropertiesFile::saveAsXml() ERROR opening FileInputStream: " + inputStream.getStatus().getErrorMessage());
+            }
+            else {
+                const auto size = file.getSize();
+                Logger::writeToLog("PropertiesFile::saveAsXml(): XML File size after saving: " + String(size));
+                
+                auto contents = inputStream.readEntireStreamAsString();
+                if (contents.isEmpty())
+                    contents = "<empty>";
+                Logger::writeToLog("PropertiesFile::saveAsXml(): XML File contents after saving:" + String(newLine) + "########" + String(newLine) + contents + String(newLine) + "########");
+            }
+            
+        }
+
         needsWriting = false;
         return true;
     }
