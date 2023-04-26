@@ -59,8 +59,11 @@ public:
           callout (*content, area, parent)
     {
         callout.setVisible (true);
-        // We can't grab keyboard focus, otherwise a cascade of callbacks happens and dismisses this callback immediately
-        callout.enterModalState (/* takeKeyboardFocus: */ false, this);
+        {
+            const ScopedValueSetter<bool> setter(callout.isTakingFocus, true);
+            // takeKeyboardFocus must be true, otherwise clicks on the CallOutBox don't work.
+            callout.enterModalState (/* takeKeyboardFocus: */ true, this);
+        }
         startTimer (200);
     }
 
@@ -150,6 +153,9 @@ bool CallOutBox::hitTest (int x, int y)
 
 void CallOutBox::inputAttemptWhenModal()
 {
+    if (isTakingFocus)
+        return;
+    
     if (dismissalMouseClicksAreAlwaysConsumed
          || targetArea.contains (getMouseXYRelative() + getBounds().getPosition()))
     {
@@ -277,7 +283,11 @@ void CallOutBox::refreshPath()
 
 void CallOutBox::timerCallback()
 {
-    toFront (true);
+    {
+        const ScopedValueSetter<bool> setter(isTakingFocus, true);
+        // shouldGrabKeyboardFocus must be true, otherwise clicks on the CallOutBox don't work.
+        toFront (/* shouldGrabKeyboardFocus: */ true);
+    }
     stopTimer();
 }
 

@@ -171,7 +171,7 @@ public:
     void mouseDown (const MouseEvent&) override;
     /** @internal */
     void mouseDrag (const MouseEvent&) override;
-
+    
 private:
     //==============================================================================
     Component& content;
@@ -182,6 +182,8 @@ private:
     std::unique_ptr<ComponentDragger> dragger;
     float arrowSize = 16.0f;
     bool dismissalMouseClicksAreAlwaysConsumed = false;
+    friend class CallOutBoxCallback;
+    bool isTakingFocus = false;
 
     Time creationTime;
 
