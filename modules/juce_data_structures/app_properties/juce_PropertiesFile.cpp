@@ -210,6 +210,29 @@ bool PropertiesFile::loadAsXml()
     return false;
 }
 
+static Result checkFileIsNonEmptyAfterSaving(const File& file)
+{
+    if (!file.existsAsFile())
+        return Result::fail("PropertiesFile::saveAsXml() ERROR: XML File doesn't exist after saving!");
+    
+    FileInputStream inputStream(file);
+    if (inputStream.failedToOpen() || inputStream.getStatus().failed())
+        return Result::fail("PropertiesFile::saveAsXml() ERROR opening FileInputStream: " + inputStream.getStatus().getErrorMessage());
+    
+    const auto size = file.getSize();
+    if (size == 0)
+        return Result::fail("PropertiesFile::saveAsXml() ERROR: XML File size is 0 after saving.");
+    
+    Logger::writeToLog("PropertiesFile::saveAsXml(): XML File size after saving: " + String(size));
+    
+    auto contents = inputStream.readEntireStreamAsString();
+    if (contents.isEmpty())
+        contents = "<empty>";
+    Logger::writeToLog("PropertiesFile::saveAsXml(): XML File contents after saving:" + String(newLine) + "########" + String(newLine) + contents + String(newLine) + "########");
+    
+    return Result::ok();
+}
+
 bool PropertiesFile::saveAsXml()
 {
     XmlElement doc (PropertyFileConstants::fileTag);
@@ -235,36 +258,28 @@ bool PropertiesFile::saveAsXml()
         return false; // locking failure..
     }
     
-    if (doc.writeTo (file, {}))
-    {
-        Logger::writeToLog("PropertiesFile::saveAsXml(): Wrote XML:" + String(newLine) + "########" + String(newLine) + doc.toString() + String(newLine) + "########");
+    size_t attempt = 0;
+    constexpr size_t maxNumAttempts = 16;
+    while (attempt++ < maxNumAttempts) {
+        if (!doc.writeTo (file, {})) {
+            Logger::writeToLog("PropertiesFile::saveAsXml() ERROR: XmlElement::writeTo() returned false.");
+            Thread::sleep(50);
+            continue;
+        }
         
-        if (!file.existsAsFile()) {
-            Logger::writeToLog("PropertiesFile::saveAsXml() ERROR: XML File doesn't exist after saving!");
-        }
-        else {
-            FileInputStream inputStream(file);
-            if (inputStream.failedToOpen() || inputStream.getStatus().failed()) {
-                Logger::writeToLog("PropertiesFile::saveAsXml() ERROR opening FileInputStream: " + inputStream.getStatus().getErrorMessage());
-            }
-            else {
-                const auto size = file.getSize();
-                Logger::writeToLog("PropertiesFile::saveAsXml(): XML File size after saving: " + String(size));
-                
-                auto contents = inputStream.readEntireStreamAsString();
-                if (contents.isEmpty())
-                    contents = "<empty>";
-                Logger::writeToLog("PropertiesFile::saveAsXml(): XML File contents after saving:" + String(newLine) + "########" + String(newLine) + contents + String(newLine) + "########");
-            }
-            
-        }
-
+        Logger::writeToLog("PropertiesFile::saveAsXml(): Wrote XML:" + String(newLine) + "########" + String(newLine) + doc.toString() + String(newLine) + "########");
         needsWriting = false;
-        return true;
+        
+        const auto checkResult = checkFileIsNonEmptyAfterSaving(file);
+        if (checkResult.wasOk()) {
+            Logger::writeToLog("PropertiesFile::saveAsXml(): Save successful, and saved file has non-zero size after saving.");
+            return true;
+        }
+        
+        Logger::writeToLog(checkResult.getErrorMessage());
+        Thread::sleep(50);
     }
     
-    Logger::writeToLog("PropertiesFile::saveAsXml() ERROR: XmlElement::writeTo() returned false.");
-
     return false;
 }
 
