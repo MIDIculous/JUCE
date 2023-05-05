@@ -130,14 +130,8 @@ bool PropertiesFile::reload()
 {
     ProcessScopedLock pl (createProcessLock());
 
-    if (pl != nullptr && ! pl->isLocked()) {
-        Logger::writeToLog("PropertiesFile::reload() ERROR: Could not lock InterProcessLock!");
-        jassertfalse;
+    if (pl != nullptr && ! pl->isLocked())
         return false; // locking failure..
-    }
-    
-    if (!file.exists())
-        Logger::writeToLog("PropertiesFile::reload(): File doesn't exist.");
 
     loadedOk = (! file.exists()) || loadAsBinary() || loadAsXml();
     return loadedOk;
@@ -223,12 +217,12 @@ static Result checkFileIsNonEmptyAfterSaving(const File& file)
     if (size == 0)
         return Result::fail("PropertiesFile::saveAsXml() ERROR: XML File size is 0 after saving.");
     
-    Logger::writeToLog("PropertiesFile::saveAsXml(): XML File size after saving: " + String(size));
+    // Logger::writeToLog("PropertiesFile::saveAsXml(): XML File size after saving: " + String(size));
     
     auto contents = inputStream.readEntireStreamAsString();
     if (contents.isEmpty())
         contents = "<empty>";
-    Logger::writeToLog("PropertiesFile::saveAsXml(): XML File contents after saving:" + String(newLine) + "########" + String(newLine) + contents + String(newLine) + "########");
+    // Logger::writeToLog("PropertiesFile::saveAsXml(): XML File contents after saving:" + String(newLine) + "########" + String(newLine) + contents + String(newLine) + "########");
     
     return Result::ok();
 }
@@ -252,34 +246,30 @@ bool PropertiesFile::saveAsXml()
 
     ProcessScopedLock pl (createProcessLock());
 
-    if (pl != nullptr && ! pl->isLocked()) {
-        Logger::writeToLog("PropertiesFile::saveAsXml() ERROR: Could not lock InterProcessLock!");
-        jassertfalse;
+    if (pl != nullptr && ! pl->isLocked())
         return false; // locking failure..
-    }
     
     size_t attempt = 0;
     constexpr size_t maxNumAttempts = 16;
     while (attempt++ < maxNumAttempts) {
         if (!doc.writeTo (file, {})) {
-            Logger::writeToLog("PropertiesFile::saveAsXml() ERROR: XmlElement::writeTo() returned false.");
+            // Logger::writeToLog("PropertiesFile::saveAsXml() ERROR: XmlElement::writeTo() returned false.");
             Thread::sleep(50);
             continue;
         }
         
-        Logger::writeToLog("PropertiesFile::saveAsXml(): Wrote XML:" + String(newLine) + "########" + String(newLine) + doc.toString() + String(newLine) + "########");
         needsWriting = false;
         
         const auto checkResult = checkFileIsNonEmptyAfterSaving(file);
         if (checkResult.wasOk()) {
-            Logger::writeToLog("PropertiesFile::saveAsXml(): Save successful, and saved file has non-zero size after saving.");
+            // Logger::writeToLog("PropertiesFile::saveAsXml(): Save successful, and saved file has non-zero size after saving.");
             return true;
         }
         
         Logger::writeToLog(checkResult.getErrorMessage());
         Thread::sleep(50);
     }
-    
+
     return false;
 }
 
