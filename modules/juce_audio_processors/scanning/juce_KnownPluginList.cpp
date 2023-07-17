@@ -92,7 +92,7 @@ bool KnownPluginList::addType (const PluginDescription& type)
 
         for (auto& desc : types)
         {
-            if (desc.isDuplicateOf (type))
+            if (desc.isDuplicateOf (type, /* ignoreZeroIDs: */ true))
             {
                 // strange - found a duplicate plugin with different info..
                 jassert (desc.name == type.name);
