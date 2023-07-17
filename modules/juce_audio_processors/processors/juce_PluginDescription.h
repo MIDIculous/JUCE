@@ -134,7 +134,7 @@ public:
         This isn't quite as simple as them just having the same file (because of
         shell plug-ins).
     */
-    bool isDuplicateOf (const PluginDescription& other) const noexcept;
+    bool isDuplicateOf (const PluginDescription& other, bool ignoreZeroIDs = false) const noexcept;
 
     /** Return true if this description is equivalent to another one which created the
         given identifier string.
