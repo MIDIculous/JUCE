@@ -54,7 +54,10 @@ namespace juce
       const auto juce_strcat  = [] (auto&& head, auto&&... tail) { strcat_s  (head, numElementsInArray (head), tail...); };
       const auto juce_sscanf  = [] (auto&&... args)              { sscanf_s  (args...); };
      #else
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
       const auto juce_sprintf = [] (auto&&... args)              { sprintf   (args...); };
+#pragma clang diagnostic pop
       const auto juce_strcpy  = [] (auto&&... args)              { strcpy    (args...); };
       const auto juce_strcat  = [] (auto&&... args)              { strcat    (args...); };
       const auto juce_sscanf  = [] (auto&&... args)              { sscanf    (args...); };
