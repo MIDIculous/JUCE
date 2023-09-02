@@ -59,7 +59,7 @@ public:
         any Label::Listener objects if the new text is different.
     */
     void setText (const String& newText,
-                  NotificationType notification);
+                  NotificationType notification = sendNotificationSync);
 
     /** Returns the label's current text.
 
