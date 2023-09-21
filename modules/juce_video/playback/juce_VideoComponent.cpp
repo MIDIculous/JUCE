@@ -106,6 +106,38 @@ double VideoComponent::getPlaySpeed() const                 { return pimpl->getS
 void VideoComponent::setAudioVolume (float newVolume)       { pimpl->setVolume (newVolume); }
 float VideoComponent::getAudioVolume() const                { return pimpl->getVolume(); }
 
+void VideoComponent::setPlacement(RectanglePlacement placement)
+{
+#if JUCE_MAC || JUCE_IOS
+#if JUCE_MAC
+    using ViewClass = NSView;
+#elif JUCE_IOS
+    using ViewClass = UIView;
+#endif
+    
+    AVPlayerLayer* layer = (AVPlayerLayer*)[(ViewClass*)pimpl->getView() layer];
+    if (![layer isKindOfClass: AVPlayerLayer.class]) {
+        jassertfalse;
+        return;
+    }
+    
+    // The Apple doc says these are macOS 10.13+, but the AVAnimation header says 10.7+. So they should be okay to use.
+    if (placement.testFlags(RectanglePlacement::stretchToFit))
+        layer.videoGravity = AVLayerVideoGravityResize;
+    else if (placement.testFlags(RectanglePlacement::centred))
+        layer.videoGravity = AVLayerVideoGravityResizeAspect;
+    else if (placement.testFlags(RectanglePlacement::fillDestination))
+        layer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+    
+#elif JUCE_WINDOWS
+    pimpl->setAllowStretch(placement.testFlags(RectanglePlacement::stretchToFit));
+    // TODO: In the case of RectanglePlacement::fillDestination, we would also have to resize the video to be "too big" and then have it clip into its parent HWND area.
+#else
+    // Not implemented
+    jassertfalse;
+#endif
+}
+
 void VideoComponent::resized()
 {
     auto r = getLocalBounds();
@@ -123,7 +155,7 @@ void VideoComponent::resized()
         }
         else
         {
-            r = RectanglePlacement (RectanglePlacement::centred).appliedTo (nativeSize, r);
+            // r = RectanglePlacement (RectanglePlacement::centred).appliedTo (nativeSize, r);
             stopTimer();
         }
     }

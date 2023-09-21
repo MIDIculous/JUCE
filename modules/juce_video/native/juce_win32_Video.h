@@ -36,6 +36,7 @@ namespace VideoRenderers
         virtual void repaintVideo (HWND, HDC) = 0;
         virtual void displayModeChanged() = 0;
         virtual HRESULT getVideoSize (long& videoWidth, long& videoHeight) = 0;
+        virtual HRESULT setAllowStretch (bool allowStretch) = 0;
     };
 
     //==============================================================================
@@ -90,6 +91,11 @@ namespace VideoRenderers
         HRESULT getVideoSize (long& videoWidth, long& videoHeight) override
         {
             return windowlessControl->GetNativeVideoSize (&videoWidth, &videoHeight, nullptr, nullptr);
+        }
+
+        HRESULT setAllowStretch (bool allowStretch) override
+        {
+            return windowlessControl->SetAspectRatioMode (allowStretch ? VMR_ARMODE_NONE : VMR_ARMODE_LETTER_BOX);
         }
 
         ComSmartPtr<ComTypes::IVMRWindowlessControl> windowlessControl;
@@ -151,6 +157,11 @@ namespace VideoRenderers
             videoWidth  = sz.cx;
             videoHeight = sz.cy;
             return hr;
+        }
+
+        HRESULT setAllowStretch (bool allowStretch) override
+        {
+            return videoDisplayControl->SetAspectRatioMode (allowStretch ? MFVideoARMode_None : MFVideoARMode_PreservePicture);
         }
 
         ComSmartPtr<ComTypes::IMFVideoDisplayControl> videoDisplayControl;
@@ -336,6 +347,14 @@ struct VideoComponent::Pimpl  : public Component,
     {
         if (owner.onErrorOccurred != nullptr)
             owner.onErrorOccurred (errorMessage);
+    }
+    
+    bool setAllowStretch (bool allowStretch)
+    {
+        if (context)
+            return context->setAllowStretch (allowStretch);
+        
+        return false;
     }
 
     File currentFile;
@@ -738,6 +757,15 @@ private:
             long volume;
             basicAudio->get_Volume (&volume);
             return (float) (volume + 10000) / 10000.0f;
+        }
+        
+        bool setAllowStretch (bool allowStretch)
+        {
+            if (!videoRenderer)
+                return false;
+            
+            const auto result = videoRenderer->setAllowStretch (allowStretch);
+            return SUCCEEDED(result);
         }
 
         enum State { uninitializedState, runningState, pausedState, stoppedState };
