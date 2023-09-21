@@ -153,6 +153,8 @@ public:
     */
     float getAudioVolume() const;
 
+    void setPlacement(RectanglePlacement placement);
+
    #if JUCE_SYNC_VIDEO_VOLUME_WITH_OS_MEDIA_VOLUME
     /** Set this callback to be notified whenever OS global media volume changes.
         Currently used on Android only.
