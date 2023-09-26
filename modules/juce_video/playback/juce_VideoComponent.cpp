@@ -109,13 +109,7 @@ float VideoComponent::getAudioVolume() const                { return pimpl->getV
 void VideoComponent::setPlacement(RectanglePlacement placement)
 {
 #if JUCE_MAC || JUCE_IOS
-#if JUCE_MAC
-    using ViewClass = NSView;
-#elif JUCE_IOS
-    using ViewClass = UIView;
-#endif
-    
-    AVPlayerLayer* layer = (AVPlayerLayer*)[(ViewClass*)pimpl->getView() layer];
+    AVPlayerLayer* layer = pimpl->getPlayerLayer();
     if (![layer isKindOfClass: AVPlayerLayer.class]) {
         jassertfalse;
         return;

@@ -183,6 +183,8 @@ struct VideoComponent::Pimpl   : public Base
 
         return 0.0f;
     }
+    
+    AVPlayerLayer* getPlayerLayer() { return playerController.getPlayerLayer(); }
 
     File currentFile;
     URL currentURL;
@@ -635,6 +637,8 @@ private:
         {
             return wrappedPlayer->getPlayer();
         }
+        
+        AVPlayerLayer* getPlayerLayer() const { return playerLayer; }
 
     private:
         struct WrappedPlayer
@@ -724,6 +728,8 @@ private:
 
             return [playerLayer.get() player];
         }
+        
+        AVPlayerLayer* getPlayerLayer() const { return playerLayer.get(); }
 
         void setPlayer (AVPlayer* playerToUse)
         {
