@@ -241,6 +241,9 @@ public:
     void focusLost (FocusChangeType) override;
     /** @internal */
     void colourChanged() override;
+    
+protected:
+    virtual void midiKeyboardStateChanged() {}
 
 private:
     //==============================================================================

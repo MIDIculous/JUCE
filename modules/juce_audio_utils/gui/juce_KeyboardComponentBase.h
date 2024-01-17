@@ -266,7 +266,7 @@ public:
     void mouseWheelMove (const MouseEvent&, const MouseWheelDetails&) override;
     
 protected:
-    /** Called when a key has been pressed or released through a click or key press.
+    /** Called when a key has been pressed or released through a click or QWERTY key press.
 
         This can be overridden to handle only key presses that come from the MidiKeyboardComponent itself, not from its MidiKeyboardState.
     */
