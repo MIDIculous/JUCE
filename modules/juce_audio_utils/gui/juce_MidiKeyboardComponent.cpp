@@ -849,6 +849,7 @@ void MidiKeyboardComponent::timerCallback()
     if (noPendingUpdates.exchange (true))
         return;
 
+    bool changed = false;
     for (int i = rangeStart; i <= rangeEnd; ++i)
     {
         bool isOn = state.isNoteOnForChannels (midiInChannelMask, i);
@@ -857,8 +858,12 @@ void MidiKeyboardComponent::timerCallback()
         {
             keysCurrentlyDrawnDown.setBit (i, isOn);
             repaintNote (i);
+            changed = true;
         }
     }
+    
+    if (changed)
+        midiKeyboardStateChanged();
 }
 
 //==============================================================================
