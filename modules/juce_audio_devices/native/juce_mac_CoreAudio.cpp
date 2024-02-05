@@ -757,7 +757,25 @@ public:
     void audioCallback (const AudioBufferList* inInputData,
                         AudioBufferList* outOutputData)
     {
-        const ScopedLock sl (callbackLock);
+        // Use a try-lock to prevent occasional deadlock when switching audio devices.
+        const ScopedTryLock sl (callbackLock, /* acquireLockOnInitialisation: */ true);
+        if (!sl.isLocked()) {
+            constexpr int maxNumAttempts = 20;
+            int attempt = 0;
+            
+            while (true) {
+                Thread::sleep(/* milliseconds: */ 1);
+                if (sl.retryLock())
+                    break;
+                
+                if (attempt++ == maxNumAttempts) {
+                    for (UInt32 i = 0; i < outOutputData->mNumberBuffers; ++i)
+                        zeromem(outOutputData->mBuffers[i].mData, outOutputData->mBuffers[i].mDataByteSize);
+                    
+                    return;
+                }
+            }
+        }
 
         if (audioDeviceStopPending)
         {
