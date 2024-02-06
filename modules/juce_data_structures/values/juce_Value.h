@@ -103,6 +103,9 @@ public:
 
     /** Move assignment operator */
     Value& operator= (Value&&) noexcept;
+    
+    /** Copy assignment operator */
+    Value& operator= (const Value&);
 
     /** Makes this object refer to the same underlying ValueSource as another one.
 
@@ -225,10 +228,6 @@ private:
 
     void callListeners();
     void removeFromListenerList();
-
-    // This is disallowed to avoid confusion about whether it should
-    // do a by-value or by-reference copy.
-    Value& operator= (const Value&) = delete;
 
     // This declaration prevents accidental construction from an integer of 0,
     // which is possible in some compilers via an implicit cast to a pointer.
