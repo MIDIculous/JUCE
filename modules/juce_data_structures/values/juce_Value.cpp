@@ -136,6 +136,15 @@ Value& Value::operator= (Value&& other) noexcept
     return *this;
 }
 
+Value& Value::operator= (const Value& other)
+{
+    // copying a Value doesn't copy its listeners. This assertion is to prevent surprises.
+    jassert (other.listeners.size() == 0);
+    
+    value = other.value;
+    return *this;
+}
+
 Value::~Value()
 {
     removeFromListenerList();
