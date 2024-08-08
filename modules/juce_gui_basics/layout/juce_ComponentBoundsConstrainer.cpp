@@ -109,7 +109,7 @@ void ComponentBoundsConstrainer::setBoundsForComponent (Component* component,
 
     if (auto* parent = component->getParentComponent())
     {
-        limits.setSize (parent->getWidth(), parent->getHeight());
+        limits = component->getLocalArea(parent, parent->getLocalBounds()).withZeroOrigin();
     }
     else
     {
