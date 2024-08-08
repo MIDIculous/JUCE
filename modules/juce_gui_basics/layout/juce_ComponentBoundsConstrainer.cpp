@@ -109,7 +109,7 @@ void ComponentBoundsConstrainer::setBoundsForComponent (Component* component,
     auto limits = [&]() -> Rectangle<int>
     {
         if (auto* parent = component->getParentComponent())
-            return { parent->getWidth(), parent->getHeight() };
+            return component->getLocalArea(parent, parent->getLocalBounds()).withZeroOrigin();
 
         const auto globalBounds = component->localAreaToGlobal (targetBounds - component->getPosition());
 
