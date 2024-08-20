@@ -1056,6 +1056,16 @@ public:
 
         if (popupDisplay == nullptr)
         {
+            if (!parentForPopupDisplay) {
+                for (Component* c = &owner; c != nullptr; c = c->getParentComponent()) {
+                    const auto* v = c->getProperties().getVarPointer("isPopupDisplayRoot");
+                    if (v && *v) {
+                        parentForPopupDisplay = c;
+                        break;
+                    }
+                }
+            }
+            
             popupDisplay.reset (new PopupDisplayComponent (owner, parentForPopupDisplay == nullptr));
 
             if (parentForPopupDisplay != nullptr)
@@ -1413,7 +1423,7 @@ public:
     };
 
     std::unique_ptr<PopupDisplayComponent> popupDisplay;
-    Component* parentForPopupDisplay = nullptr;
+    WeakReference<Component> parentForPopupDisplay;
 
     //==============================================================================
     static double smallestAngleBetween (double a1, double a2) noexcept
