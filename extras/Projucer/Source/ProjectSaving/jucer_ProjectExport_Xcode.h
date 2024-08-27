@@ -1649,7 +1649,7 @@ public:
                 if (xcodeCopyToProductInstallPathAfterBuild)
                 {
                     s.set ("DEPLOYMENT_LOCATION", "YES");
-                    s.set ("DSTROOT", "/");
+                    s.set ("INSTALL_ROOT", "/");
                 }
             }
 
