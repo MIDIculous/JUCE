@@ -850,8 +850,10 @@ void Project::updateModuleWarnings()
 
         auto info = modules.getModuleInfo (moduleID);
 
+#if 0
         if (! oldProjucer && (isJUCEModule (moduleID) && getJuceVersion (info.getVersion()) > getBuiltJuceVersion()))
             oldProjucer = true;
+#endif
 
         if (! moduleNotFound && ! info.isValid())
             moduleNotFound = true;

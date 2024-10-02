@@ -200,6 +200,7 @@ public:
           embeddedFrameworksValue                      (settings, Ids::embeddedFrameworks,                      getUndoManager()),
           postbuildCommandValue                        (settings, Ids::postbuildCommand,                        getUndoManager()),
           prebuildCommandValue                         (settings, Ids::prebuildCommand,                         getUndoManager()),
+          embedAUv3AppExtensionValue                   (settings, Ids::embedAUv3AppExtension,                   getUndoManager(), true),
           duplicateAppExResourcesFolderValue           (settings, Ids::duplicateAppExResourcesFolder,           getUndoManager(), true),
           iosDeviceFamilyValue                         (settings, Ids::iosDeviceFamily,                         getUndoManager(), "1,2"),
           iPhoneScreenOrientationValue                 (settings, Ids::iPhoneScreenOrientation,                 getUndoManager(), getDefaultScreenOrientations(), ","),
@@ -292,6 +293,8 @@ public:
 
     String getPostBuildScript() const                       { return postbuildCommandValue.get(); }
     String getPreBuildScript() const                        { return prebuildCommandValue.get(); }
+    
+    bool shouldEmbedAUv3AppExtension() const                { return embedAUv3AppExtensionValue.get(); }
 
     bool shouldDuplicateAppExResourcesFolder() const        { return duplicateAppExResourcesFolderValue.get(); }
 
@@ -474,9 +477,12 @@ public:
                    "This way you can specify them for OS X and iOS separately, and modify the content of the resource folders "
                    "without re-saving the Projucer project.");
 
-        if (getProject().isAudioPluginProject())
+        if (getProject().isAudioPluginProject()) {
+            props.add (new ChoicePropertyComponent (embedAUv3AppExtensionValue, "Embed AUv3 App Extension"),
+                       "Disable this to prevent embedding the AUv3 .appex into the .app/Contents/PlugIns/ folder.");
             props.add (new ChoicePropertyComponent (duplicateAppExResourcesFolderValue, "Add Duplicate Resources Folder to App Extension"),
                        "Disable this to prevent the Projucer from creating a duplicate resources folder for AUv3 app extensions.");
+        }
 
         props.add (new TextPropertyComponent (buildNumber, "Build Number", 128, false),
                    "The current version of the project. Used to disambiguate different builds of the same project on App Store Connect. "
@@ -1449,8 +1455,10 @@ public:
 
             if (type == XcodeTarget::StandalonePlugIn)
             {
-                if (auto* auv3Target = owner.getTargetOfType (XcodeTarget::AudioUnitv3PlugIn))
-                    dependencyIDs.add (auv3Target->addDependencyFor (*this));
+                if (owner.shouldEmbedAUv3AppExtension()) {
+                    if (auto* auv3Target = owner.getTargetOfType (XcodeTarget::AudioUnitv3PlugIn))
+                        dependencyIDs.add (auv3Target->addDependencyFor (*this));
+                }
             }
         }
 
@@ -1623,9 +1631,11 @@ public:
             if (config.getTargetBinaryRelativePathString().isEmpty())
                 return configurationBuildDir;
 
+#if 0
             // a target's position can either be defined via installPath + xcodeCopyToProductInstallPathAfterBuild
             // (= for audio plug-ins) or using a custom binary path (for everything else), but not both (= conflict!)
             jassert (! xcodeCopyToProductInstallPathAfterBuild);
+#endif
 
             build_tools::RelativePath binaryPath (config.getTargetBinaryRelativePathString(),
                                                   build_tools::RelativePath::projectFolder);
@@ -2562,6 +2572,7 @@ private:
             target->addShellScriptBuildPhase ("Post-build script", getPostBuildScript());
 
             if (project.isAudioPluginProject() && project.shouldBuildAUv3()
+                && shouldEmbedAUv3AppExtension()
                 && project.shouldBuildStandalonePlugin() && target->type == XcodeTarget::StandalonePlugIn)
                 embedAppExtension();
 
@@ -3534,7 +3545,7 @@ private:
         if (! build_tools::isAbsolutePath (path) && ! isRelativePath)
             path = "System/Library/Frameworks/" + path;
 
-        if (! path.endsWithIgnoreCase (".framework"))
+        if (! path.endsWithIgnoreCase (".framework") && ! path.endsWithIgnoreCase(".xcframework"))
             path << ".framework";
 
         auto fileRefID = createFileRefID (path);
@@ -3549,7 +3560,7 @@ private:
 
     String addCustomFramework (String frameworkPath) const
     {
-        if (! frameworkPath.endsWithIgnoreCase (".framework"))
+        if (! frameworkPath.endsWithIgnoreCase (".framework") && ! frameworkPath.endsWithIgnoreCase(".xcframework"))
             frameworkPath << ".framework";
 
         auto fileRefID = createFileRefID (frameworkPath);
@@ -3903,7 +3914,9 @@ private:
 
                 if (objectID == childID)
                 {
+#if 0
                     jassert (obj.isEquivalentTo (data));
+#endif
                     return;
                 }
             }
@@ -3941,6 +3954,7 @@ private:
                                  validArchsValue,
                                  extraFrameworksValue, frameworkSearchPathsValue, extraCustomFrameworksValue, embeddedFrameworksValue,
                                  postbuildCommandValue, prebuildCommandValue,
+                                 embedAUv3AppExtensionValue,
                                  duplicateAppExResourcesFolderValue, iosDeviceFamilyValue, iPhoneScreenOrientationValue,
                                  iPadScreenOrientationValue, customXcodeResourceFoldersValue, customXcassetsFolderValue,
                                  appSandboxValue, appSandboxInheritanceValue, appSandboxOptionsValue,

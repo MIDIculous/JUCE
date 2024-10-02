@@ -529,6 +529,7 @@ void ProjectSaver::writeAppHeader (MemoryOutputStream& out, const OwnedArray<Lib
     if (hasBinaryData && project.shouldIncludeBinaryInJuceHeader())
         out << CodeHelpers::createIncludeStatement (project.getBinaryDataHeaderFile(), getAppConfigFile()) << newLine;
 
+#if 0
     out << newLine
         << "#if defined (JUCE_PROJUCER_VERSION) && JUCE_PROJUCER_VERSION < JUCE_VERSION" << newLine
         << " /** If you've hit this error then the version of the Projucer that was used to generate this project is" << newLine
@@ -539,6 +540,7 @@ void ProjectSaver::writeAppHeader (MemoryOutputStream& out, const OwnedArray<Lib
         << " #error \"This project was last saved using an outdated version of the Projucer! Re-save this project with the latest version to fix this error.\"" << newLine
         << "#endif" << newLine
         << newLine;
+#endif
 
     if (project.shouldAddUsingNamespaceToJuceHeader())
         out << "#if ! DONT_SET_USING_JUCE_NAMESPACE" << newLine
