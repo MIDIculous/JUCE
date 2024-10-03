@@ -202,11 +202,13 @@ LatestVersionCheckerAndUpdater::~LatestVersionCheckerAndUpdater()
 
 void LatestVersionCheckerAndUpdater::checkForNewVersion (bool background)
 {
+#if 0
     if (! isThreadRunning())
     {
         backgroundCheck = background;
         startThread (Priority::low);
     }
+#endif
 }
 
 //==============================================================================
