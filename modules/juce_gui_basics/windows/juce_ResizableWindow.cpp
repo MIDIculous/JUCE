@@ -60,6 +60,7 @@ ResizableWindow::~ResizableWindow()
 
 void ResizableWindow::initialise (const bool shouldAddToDesktop)
 {
+#if 0
     /*
       ==========================================================================
 
@@ -80,6 +81,7 @@ void ResizableWindow::initialise (const bool shouldAddToDesktop)
    #endif
 
     // END SECTION A
+#endif
 
     defaultConstrainer.setMinimumOnscreenAmounts (0x10000, 16, 24, 16);
 

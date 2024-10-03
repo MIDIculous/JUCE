@@ -56,6 +56,7 @@ void AudioProcessorEditor::hostMIDIControllerIsAvailable (bool)                {
 
 void AudioProcessorEditor::initialise()
 {
+#if 0
     /*
       ==========================================================================
        In accordance with the terms of the JUCE 6 End-Use License Agreement, the
@@ -72,6 +73,7 @@ void AudioProcessorEditor::initialise()
     splashScreen = new JUCESplashScreen (*this);
 
     // END SECTION A
+#endif
 
     attachConstrainer (&defaultConstrainer);
     resizeListener.reset (new AudioProcessorEditorListener (*this));
