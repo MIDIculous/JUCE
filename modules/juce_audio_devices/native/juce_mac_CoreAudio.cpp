@@ -1168,7 +1168,8 @@ public:
 
         {
             const ScopedLock sl (closeLock);
-            previousCallback = stopInternal();
+            if (auto* previous = stopInternal())
+                previousCallback = previous;
         }
 
         startTimer (100);
