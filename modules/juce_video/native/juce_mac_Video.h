@@ -638,7 +638,7 @@ private:
             return wrappedPlayer->getPlayer();
         }
         
-        AVPlayerLayer* getPlayerLayer() const { return playerLayer; }
+        AVPlayerLayer* getPlayerLayer() const { return wrappedPlayer->getPlayerLayer(); }
 
     private:
         struct WrappedPlayer
@@ -647,15 +647,17 @@ private:
             virtual NSView* getView() const = 0;
             virtual AVPlayer* getPlayer() const = 0;
             virtual void setPlayer (AVPlayer*) = 0;
+            virtual AVPlayerLayer* getPlayerLayer() const = 0;
         };
 
         class WrappedPlayerLayer : public WrappedPlayer
         {
         public:
-            WrappedPlayerLayer ()                       { [view.get() setLayer: playerLayer.get()]; }
-            NSView* getView() const override            { return view.get(); }
-            AVPlayer* getPlayer() const override        { return [playerLayer.get() player]; }
-            void setPlayer (AVPlayer* player) override  { [playerLayer.get() setPlayer: player]; }
+            WrappedPlayerLayer ()                           { [view.get() setLayer: playerLayer.get()]; }
+            NSView* getView() const override                { return view.get(); }
+            AVPlayer* getPlayer() const override            { return [playerLayer.get() player]; }
+            void setPlayer (AVPlayer* player) override      { [playerLayer.get() setPlayer: player]; }
+            AVPlayerLayer* getPlayerLayer() const override  { return playerLayer.get(); }
 
         private:
             NSUniquePtr<NSView> view                    { [[NSView alloc] init] };
@@ -666,9 +668,10 @@ private:
         {
         public:
             WrappedPlayerView() = default;
-            NSView* getView() const override            { return playerView.get(); }
-            AVPlayer* getPlayer() const override        { return [playerView.get() player]; }
-            void setPlayer (AVPlayer* player) override  { [playerView.get() setPlayer: player]; }
+            NSView* getView() const override                { return playerView.get(); }
+            AVPlayer* getPlayer() const override            { return [playerView.get() player]; }
+            void setPlayer (AVPlayer* player) override      { [playerView.get() setPlayer: player]; }
+            AVPlayerLayer* getPlayerLayer() const override  { return nullptr; }
 
         private:
             NSUniquePtr<AVPlayerView> playerView        { [[AVPlayerView alloc] init] };
