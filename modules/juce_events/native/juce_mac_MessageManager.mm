@@ -42,6 +42,7 @@ struct AppDelegateClass   : public ObjCClass<NSObject>
         addMethod (@selector (applicationWillTerminate:),       applicationWillTerminate);
         addMethod (@selector (application:openFile:),           application_openFile);
         addMethod (@selector (application:openFiles:),          application_openFiles);
+        addMethod (@selector (application:openURLs:),           application_openURLs);
         addMethod (@selector (applicationDidBecomeActive:),     applicationDidBecomeActive);
         addMethod (@selector (applicationDidResignActive:),     applicationDidResignActive);
         addMethod (@selector (applicationWillUnhide:),          applicationWillUnhide);
@@ -77,9 +78,9 @@ private:
     {
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
         [[NSAppleEventManager sharedAppleEventManager] setEventHandler: self
-                                                           andSelector: @selector (getUrl:withReplyEvent:)
-                                                         forEventClass: kInternetEventClass
-                                                            andEventID: kAEGetURL];
+                                                         andSelector: @selector (getUrl:withReplyEvent:)
+                                                       forEventClass: kInternetEventClass
+                                                          andEventID: kAEGetURL];
         JUCE_END_IGNORE_WARNINGS_GCC_LIKE
     }
 
@@ -141,6 +142,20 @@ private:
             if (files.size() > 0)
                 app->anotherInstanceStarted (files.joinIntoString (" "));
         }
+    }
+    
+    static void application_openURLs (id self, SEL sel, NSApplication* app, NSArray* urls)
+    {
+        NSMutableArray<NSString*>* strings = [NSMutableArray new];
+        
+        for (NSURL* url in urls) {
+            if (url.isFileURL)
+                [strings addObject: url.path];
+            else
+                [strings addObject: url.absoluteString];
+        }
+        
+        application_openFiles(self, sel, app, strings);
     }
 
     static void applicationDidBecomeActive (id /*self*/, SEL, NSNotification*)  { focusChanged(); }
