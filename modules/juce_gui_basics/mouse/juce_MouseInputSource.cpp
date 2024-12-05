@@ -293,7 +293,9 @@ public:
     {
         lastTime = time;
         ++mouseEventCounter;
-        const auto pointerState = PointerState().withPosition (newPeer.localToGlobal (positionWithinPeer))
+        const auto pointerState = PointerState().withPosition (positionWithinPeer == MouseInputSource::offscreenMousePos
+                                                               ? positionWithinPeer
+                                                               : newPeer.localToGlobal (positionWithinPeer))
                                                 .withPressure (newPressure)
                                                 .withOrientation (newOrientation)
                                                 .withRotation (MouseInputSource::defaultRotation)
