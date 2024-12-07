@@ -2710,8 +2710,10 @@ private:
                           });
 
         if (! embeddedFrameworkIDs.isEmpty())
-            for (auto& target : targets)
+            for (auto& target : targets) {
+                if (target->type != XcodeTarget::SharedCodeTarget)
                 target->addCopyFilesPhase ("Embed Frameworks", embeddedFrameworkIDs, kFrameworksFolder);
+    }
     }
 
     void addCustomResourceFolders() const
