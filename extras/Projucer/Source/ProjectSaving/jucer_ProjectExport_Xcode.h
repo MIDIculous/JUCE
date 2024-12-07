@@ -1196,7 +1196,7 @@ public:
         StringArray xcodeFrameworks, xcodeLibs;
         Array<XmlElement> xcodeExtraPListEntries;
 
-        StringArray frameworkIDs, buildPhaseIDs, configIDs, sourceIDs, rezFileIDs, dependencyIDs;
+        StringArray frameworkIDs, ignoredFrameworkIDs, buildPhaseIDs, configIDs, sourceIDs, rezFileIDs, dependencyIDs;
         StringArray frameworkNames;
         String mainBuildProductID;
         File infoPlistFile;
@@ -2308,7 +2308,7 @@ private:
                 if (! projectType.isStaticLibrary()
                     && target->type != XcodeTarget::SharedCodeTarget
                     && target->type != XcodeTarget::LV2TurtleProgram)
-                    target->addBuildPhase ("PBXFrameworksBuildPhase", target->frameworkIDs);
+                    target->addBuildPhase ("PBXFrameworksBuildPhase", removeIgnoredFrameworks(target->frameworkIDs, target->ignoredFrameworkIDs));
             }
 
             if (target->type == XcodeTarget::LV2PlugIn)
@@ -2633,6 +2633,8 @@ private:
             {
                 target->frameworkIDs.add (frameworkID);
                 target->frameworkNames.add (framework);
+                if (target->type == XcodeTarget::AudioUnitv3PlugIn && isFFmpeg(framework))
+                    target->ignoredFrameworkIDs.addIfNotAlreadyThere(frameworkID);
             }
         }
     }
@@ -2692,6 +2694,8 @@ private:
                     {
                         target->frameworkIDs.add (frameworkID);
                         target->frameworkNames.add (framework);
+                        if (target->type == XcodeTarget::AudioUnitv3PlugIn && isFFmpeg(framework))
+                            target->ignoredFrameworkIDs.addIfNotAlreadyThere(frameworkID);
                     }
                 }
             }
@@ -2709,11 +2713,13 @@ private:
                               return frameworkId;
                           });
 
-        if (! embeddedFrameworkIDs.isEmpty())
-            for (auto& target : targets) {
-                if (target->type != XcodeTarget::SharedCodeTarget)
-                    target->addCopyFilesPhase ("Embed Frameworks", embeddedFrameworkIDs, kFrameworksFolder);
+        for (auto& target : targets) {
+            auto ids = removeIgnoredFrameworks(embeddedFrameworkIDs, target->ignoredFrameworkIDs);
+            if (! ids.isEmpty()) {
+                if (target->type != XcodeTarget::SharedCodeTarget && target->type != XcodeTarget::AggregateTarget)
+                    target->addCopyFilesPhase ("Embed Frameworks", ids, kFrameworksFolder);
             }
+        }
     }
 
     void addCustomResourceFolders() const
@@ -2803,8 +2809,11 @@ private:
                                                                   .withFileRefID (proxyID)
                                                                   .withInhibitWarningsEnabled (true));
 
-                    for (auto& target : targets)
+                    for (auto& target : targets) {
                         target->frameworkIDs.add (buildFileID);
+                        if (target->type == XcodeTarget::AudioUnitv3PlugIn && isFFmpeg(buildProduct.path))
+                            target->ignoredFrameworkIDs.addIfNotAlreadyThere(buildFileID);
+                    }
 
                     if (buildProductFileType == "wrapper.framework")
                     {
@@ -3624,6 +3633,27 @@ private:
         }
 
         jassertfalse;
+    }
+    
+    static StringArray removeIgnoredFrameworks(const StringArray& frameworkIDs, const StringArray& ignoredFrameworkIDs)
+    {
+        StringArray result;
+        for (const auto& s : frameworkIDs) {
+            if (!ignoredFrameworkIDs.contains(s, /* ignoreCase: */ true))
+                result.add(s);
+        }
+        
+        return result;
+    }
+    
+    static bool isFFmpeg(const String& framework)
+    {
+        static const StringArray ffmpegFrameworks = { "avcodec", "avdevice", "avfilter", "avformat", "avutil", "swresample", "swscale" };
+        for (const auto& name : ffmpegFrameworks) {
+            if (framework.containsIgnoreCase(name))
+                return true;
+        }
+        return false;
     }
 
     //==============================================================================
