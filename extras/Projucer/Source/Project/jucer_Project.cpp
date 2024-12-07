@@ -468,7 +468,7 @@ void Project::updateOldModulePaths()
 
 Array<Identifier> Project::getLegacyPluginFormatIdentifiers() noexcept
 {
-    static Array<Identifier> legacyPluginFormatIdentifiers { Ids::buildVST, Ids::buildVST3, Ids::buildAU, Ids::buildAUv3,
+    static Array<Identifier> legacyPluginFormatIdentifiers { Ids::buildVST, Ids::buildVST3, Ids::buildAU, Ids::buildMacAUv3, Ids::buildiOSAUv3,
                                                              Ids::buildAAX, Ids::buildStandalone, Ids::enableIAA };
 
     return legacyPluginFormatIdentifiers;
@@ -1216,7 +1216,7 @@ const build_tools::ProjectType& Project::getProjectType() const
     return *guiType;
 }
 
-bool Project::shouldBuildTargetType (build_tools::ProjectType::Target::Type targetType) const noexcept
+bool Project::shouldBuildTargetType (bool isiOS, build_tools::ProjectType::Target::Type targetType) const noexcept
 {
     auto& projectType = getProjectType();
 
@@ -1236,7 +1236,7 @@ bool Project::shouldBuildTargetType (build_tools::ProjectType::Target::Type targ
         case Target::AudioUnitPlugIn:
             return shouldBuildAU();
         case Target::AudioUnitv3PlugIn:
-            return shouldBuildAUv3();
+            return isiOS ? shouldBuildiOSAUv3() : shouldBuildMacAUv3();
         case Target::StandalonePlugIn:
             return shouldBuildStandalonePlugin();
         case Target::UnityPlugIn:
@@ -1426,8 +1426,8 @@ void Project::createPropertyEditors (PropertyListBuilder& props)
 void Project::createAudioPluginPropertyEditors (PropertyListBuilder& props)
 {
     {
-        StringArray pluginFormatChoices { "VST3", "AU", "AUv3", "AAX", "Standalone", "LV2", "Unity", "Enable IAA", "VST (Legacy)" };
-        Array<var> pluginFormatChoiceValues { Ids::buildVST3.toString(), Ids::buildAU.toString(), Ids::buildAUv3.toString(),
+        StringArray pluginFormatChoices { "VST3", "AU", "AUv3 (Mac)", "AUv3 (iOS)", "AAX", "Standalone", "LV2", "Unity", "Enable IAA", "VST (Legacy)" };
+        Array<var> pluginFormatChoiceValues { Ids::buildVST3.toString(), Ids::buildAU.toString(), Ids::buildMacAUv3.toString(), Ids::buildiOSAUv3.toString(),
                                               Ids::buildAAX.toString(), Ids::buildStandalone.toString(),
                                               Ids::buildLV2.toString(), Ids::buildUnity.toString(), Ids::enableIAA.toString(), Ids::buildVST.toString() };
         if (! getProjectType().isARAAudioPlugin())
@@ -2725,7 +2725,8 @@ StringPairArray Project::getAudioPluginFlags() const
     flags.set ("JucePlugin_Build_VST",                   boolToString (shouldBuildVST()));
     flags.set ("JucePlugin_Build_VST3",                  boolToString (shouldBuildVST3()));
     flags.set ("JucePlugin_Build_AU",                    boolToString (shouldBuildAU()));
-    flags.set ("JucePlugin_Build_AUv3",                  boolToString (shouldBuildAUv3()));
+    flags.set ("JucePlugin_Build_MacAUv3",                  boolToString (shouldBuildMacAUv3()));
+    flags.set ("JucePlugin_Build_iOSAUv3",                  boolToString (shouldBuildiOSAUv3()));
     flags.set ("JucePlugin_Build_AAX",                   boolToString (shouldBuildAAX()));
     flags.set ("JucePlugin_Build_Standalone",            boolToString (shouldBuildStandalonePlugin()));
     flags.set ("JucePlugin_Build_Unity",                 boolToString (shouldBuildUnityPlugin()));

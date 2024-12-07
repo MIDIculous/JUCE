@@ -340,7 +340,8 @@ namespace Ids
     DECLARE_ID (buildVST);
     DECLARE_ID (buildVST3);
     DECLARE_ID (buildAU);
-    DECLARE_ID (buildAUv3);
+    DECLARE_ID (buildMacAUv3);
+    DECLARE_ID (buildiOSAUv3);
     DECLARE_ID (buildAAX);
     DECLARE_ID (buildStandalone);
     DECLARE_ID (buildUnity);

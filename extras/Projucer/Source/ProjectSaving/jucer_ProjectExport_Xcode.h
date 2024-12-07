@@ -2347,7 +2347,7 @@ private:
 
             target->addShellScriptBuildPhase ("Post-build script", getPostBuildScript());
 
-            if (project.isAudioPluginProject() && project.shouldBuildAUv3() && shouldEmbedAUv3AppExtension()
+            if (project.isAudioPluginProject() && (isiOS() ? project.shouldBuildiOSAUv3() : project.shouldBuildMacAUv3()) && shouldEmbedAUv3AppExtension()
                 && project.shouldBuildStandalonePlugin() && target->type == XcodeTarget::StandalonePlugIn)
                 embedAppExtension();
 
@@ -2712,8 +2712,8 @@ private:
         if (! embeddedFrameworkIDs.isEmpty())
             for (auto& target : targets) {
                 if (target->type != XcodeTarget::SharedCodeTarget)
-                target->addCopyFilesPhase ("Embed Frameworks", embeddedFrameworkIDs, kFrameworksFolder);
-    }
+                    target->addCopyFilesPhase ("Embed Frameworks", embeddedFrameworkIDs, kFrameworksFolder);
+            }
     }
 
     void addCustomResourceFolders() const

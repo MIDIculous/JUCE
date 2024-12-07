@@ -98,7 +98,7 @@ public:
 
     inline bool shouldBuildTargetType (build_tools::ProjectType::Target::Type type) const
     {
-        return project.shouldBuildTargetType (type) && supportsTargetType (type);
+        return project.shouldBuildTargetType (isiOS(), type) && supportsTargetType (type);
     }
 
     inline void callForAllSupportedTargets (std::function<void (build_tools::ProjectType::Target::Type)> callback)
