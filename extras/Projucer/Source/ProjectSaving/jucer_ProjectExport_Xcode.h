@@ -3151,7 +3151,7 @@ private:
 
         if (projectItem.isModuleCode())
         {
-            if (auto* xcodeTarget = getTargetOfType (getProject().getTargetTypeFromFilePath (projectItem.getFile(), false)))
+            if (auto* xcodeTarget = getTargetOfType (getProject().getTargetTypeFromFilePath (isiOS(), projectItem.getFile(), false)))
             {
                 auto rezFileID = addBuildFile (FileOptions().withRelativePath (path)
                                                             .withFileRefID (refID)
@@ -3232,8 +3232,8 @@ private:
                 return addRezFile (projectItem, path);
 
             XcodeTarget* xcodeTarget = nullptr;
-            if (projectItem.isModuleCode() && projectItem.shouldBeCompiled())
-                xcodeTarget = getTargetOfType (project.getTargetTypeFromFilePath (projectItem.getFile(), false));
+            if (projectItem.shouldBeCompiled())
+                xcodeTarget = getTargetOfType (project.getTargetTypeFromFilePath (isiOS(), projectItem.getFile(), false));
 
             return addFile (FileOptions().withRelativePath (path)
                                          .withCompilerFlags (getCompilerFlagsForProjectItem (projectItem))
@@ -3648,7 +3648,7 @@ private:
     
     static bool isFFmpeg(const String& framework)
     {
-        static const StringArray ffmpegFrameworks = { "avcodec", "avdevice", "avfilter", "avformat", "avutil", "swresample", "swscale" };
+        static const StringArray ffmpegFrameworks = { "avcodec", "avdevice", "avfilter", "avformat", "avutil", "swresample", "swscale", "ffmpeg" };
         for (const auto& name : ffmpegFrameworks) {
             if (framework.containsIgnoreCase(name))
                 return true;

@@ -733,7 +733,7 @@ private:
             if (! projectItem.shouldBeCompiled())
                 return getTargetWithType (build_tools::ProjectType::Target::SharedCodeTarget);
 
-            return getTargetWithType (getProject().getTargetTypeFromFilePath (projectItem.getFile(), true));
+            return getTargetWithType (getProject().getTargetTypeFromFilePath (isiOS(), projectItem.getFile(), true));
         }
 
         return getMainTarget();

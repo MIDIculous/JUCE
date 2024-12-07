@@ -901,7 +901,7 @@ public:
                     addFilesToCompile (projectItem.getChild (i), cpps, headers, otherFiles);
             }
             else if (projectItem.shouldBeAddedToTargetProject() && projectItem.shouldBeAddedToTargetExporter (getOwner())
-                     && getOwner().getProject().getTargetTypeFromFilePath (projectItem.getFile(), true) == targetType)
+                     && getOwner().getProject().getTargetTypeFromFilePath (getOwner().isiOS(), projectItem.getFile(), true) == targetType)
             {
                 build_tools::RelativePath path (projectItem.getFile(), getOwner().getTargetFolder(), build_tools::RelativePath::buildTargetFolder);
 
@@ -1013,7 +1013,7 @@ public:
             }
             else if (projectItem.shouldBeAddedToTargetProject()
                      && projectItem.shouldBeAddedToTargetExporter (getOwner())
-                     && getOwner().getProject().getTargetTypeFromFilePath (projectItem.getFile(), true) == targetType)
+                     && getOwner().getProject().getTargetTypeFromFilePath (getOwner().isiOS(), projectItem.getFile(), true) == targetType)
             {
                 build_tools::RelativePath relativePath (projectItem.getFile(),
                                                         getOwner().getTargetFolder(),

@@ -1260,9 +1260,16 @@ bool Project::shouldBuildTargetType (bool isiOS, build_tools::ProjectType::Targe
     return true;
 }
 
-build_tools::ProjectType::Target::Type Project::getTargetTypeFromFilePath (const File& file, bool returnSharedTargetIfNoValidSuffix)
+build_tools::ProjectType::Target::Type Project::getTargetTypeFromFilePath (bool isiOS, const File& file, bool returnSharedTargetIfNoValidSuffix)
 {
     auto path = file.getFullPathName();
+    if (isiOS) {
+        if (file.getFileName().containsIgnoreCase("iOSAUv3FFMPEGDummyFallback"))
+            return build_tools::ProjectType::Target::AudioUnitv3PlugIn;
+        if (file.getFileName().containsIgnoreCase("ffmpeg"))
+            return build_tools::ProjectType::Target::StandalonePlugIn;
+    }
+    
     String pluginClientModuleName = "juce_audio_plugin_client";
 
     auto isInPluginClientSubdir = [&path, &pluginClientModuleName] (StringRef subDir)

@@ -1030,7 +1030,7 @@ private:
 
             for (auto& [path, flags] : files)
             {
-                if (p.getTargetTypeFromFilePath (path, true) == targetType)
+                if (p.getTargetTypeFromFilePath (isiOS(), path, true) == targetType)
                 {
                     targetFiles.emplace_back (build_tools::RelativePath { path,
                                                                           getTargetFolder(),

@@ -348,7 +348,7 @@ public:
 
     //==============================================================================
     bool shouldBuildTargetType (bool isiOS, build_tools::ProjectType::Target::Type targetType) const noexcept;
-    static build_tools::ProjectType::Target::Type getTargetTypeFromFilePath (const File& file, bool returnSharedTargetIfNoValidSuffix);
+    static build_tools::ProjectType::Target::Type getTargetTypeFromFilePath (bool isiOS, const File& file, bool returnSharedTargetIfNoValidSuffix);
 
     //==============================================================================
     void updateDeprecatedProjectSettingsInteractively();

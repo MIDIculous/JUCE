@@ -273,7 +273,7 @@ bool LibraryModule::CompileUnit::isNeededForExporter (ProjectExporter& exporter)
      || (hasSuffix (file, "_Android")    && ! exporter.isAndroid()))
         return false;
 
-    auto targetType = Project::getTargetTypeFromFilePath (file, false);
+    auto targetType = Project::getTargetTypeFromFilePath (exporter.isiOS(), file, false);
 
     if (targetType != build_tools::ProjectType::Target::unspecified && ! exporter.shouldBuildTargetType (targetType))
         return false;
@@ -310,7 +310,7 @@ Array<LibraryModule::CompileUnit> LibraryModule::getAllCompileUnits (build_tools
               && file.hasFileExtension (sourceFileExtensions))
         {
             if (forTarget == build_tools::ProjectType::Target::unspecified
-             || forTarget == Project::getTargetTypeFromFilePath (file, true))
+             || forTarget == Project::getTargetTypeFromFilePath (/* isiOS: */ false, file, true))
             {
                 CompileUnit cu;
                 cu.file = file;

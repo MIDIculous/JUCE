@@ -1439,7 +1439,7 @@ private:
             auto f = projectItem.getFile();
             build_tools::RelativePath file (f, getTargetFolder().getChildFile ("app"), build_tools::RelativePath::buildTargetFolder);
 
-            auto targetType = getProject().getTargetTypeFromFilePath (f, true);
+            auto targetType = getProject().getTargetTypeFromFilePath (isiOS(), f, true);
 
             mo << "    \"" << file.toUnixStyle() << "\"" << newLine;
 
