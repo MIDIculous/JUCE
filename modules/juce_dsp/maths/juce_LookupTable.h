@@ -252,8 +252,8 @@ public:
     */
     FloatType processSample (FloatType value) const noexcept
     {
-        auto index = scaler * jlimit (minInputValue, maxInputValue, value) + offset;
-        jassert (isPositiveAndBelow (index, FloatType (lookupTable.getNumPoints())));
+        value = scaler * value + offset;
+        auto index = jlimit<int>(0, lookupTable.getNumPoints() - 1, value);
 
         return lookupTable[index];
     }
