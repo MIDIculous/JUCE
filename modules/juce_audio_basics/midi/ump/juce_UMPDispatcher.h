@@ -51,6 +51,9 @@ public:
                    double timeStamp,
                    PacketCallbackFunction&& callback)
     {
+        if (!begin || !end)
+            return;
+        
         std::for_each (begin, end, [&] (uint32_t word)
         {
             nextPacket[currentPacketLen++] = word;
