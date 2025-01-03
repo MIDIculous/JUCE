@@ -492,6 +492,7 @@ struct iOSAudioIODevice::Pimpl      : public AsyncUpdater
         if (iOSExplicitSampleRates.size() != 0)
         {
             availableSampleRates = Array<double> (iOSExplicitSampleRates);
+            sampleRate = trySampleRate (sampleRate); // This is the fix
             return;
         }
 
