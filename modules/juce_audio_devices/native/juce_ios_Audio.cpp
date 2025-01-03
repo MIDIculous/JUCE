@@ -1231,9 +1231,6 @@ struct iOSAudioIODevice::Pimpl      : public AsyncUpdater
     {
         const ScopedLock sl (callbackLock);
 
-        updateHardwareInfo();
-        setTargetSampleRateAndBufferSize();
-
         if (isRunning)
         {
             if (audioUnit != nullptr)
