@@ -253,7 +253,8 @@ public:
     FloatType processSample (FloatType value) const noexcept
     {
         value = scaler * value + offset;
-        auto index = jlimit<int>(0, lookupTable.getNumPoints() - 1, value);
+        // NOTE: index is float (not int), to interpolate between two points
+        auto index = jlimit<float>(0, lookupTable.getNumPoints() - 1, value);
 
         return lookupTable[index];
     }
