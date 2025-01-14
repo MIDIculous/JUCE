@@ -1279,7 +1279,7 @@ void TextEditor::textChanged()
     checkLayout();
 
     if (listeners.size() != 0 || onTextChange != nullptr)
-        postCommandMessage (TextEditorDefs::textChangeMessageId);
+        handleCommandMessage (TextEditorDefs::textChangeMessageId);
 
     if (textValue.getValueSource().getReferenceCount() > 1)
     {
