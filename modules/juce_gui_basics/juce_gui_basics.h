@@ -67,6 +67,13 @@
  #define JUCE_ENABLE_REPAINT_DEBUGGING 0
 #endif
 
+/** Config: JUCE_ENABLE_IOS_STORE_KIT
+    Disable this to remove StoreKit/SKPaymentQueue support.
+*/
+#ifndef JUCE_ENABLE_IOS_STORE_KIT
+ #define JUCE_ENABLE_IOS_STORE_KIT 1
+#endif
+
 /** Config: JUCE_USE_XRANDR
     Enables Xrandr multi-monitor support (Linux only).
     Unless you specifically want to disable this, it's best to leave this option turned on.
