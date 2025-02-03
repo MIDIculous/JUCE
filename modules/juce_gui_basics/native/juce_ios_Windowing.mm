@@ -23,7 +23,9 @@
   ==============================================================================
 */
 
+#if JUCE_ENABLE_IOS_STORE_KIT
 extern void* juce_GetSKPaymentTransactionObserver();
+#endif
 
 namespace juce
 {
@@ -48,7 +50,9 @@ Array<AppInactivityCallback*> appBecomingInactiveCallbacks;
     UIBackgroundTaskIdentifier appSuspendTask;
 }
 
+#if JUCE_ENABLE_IOS_STORE_KIT
 @property (strong, nonatomic) NSObject<SKPaymentTransactionObserver> *transactionObserver;
+#endif
 @property(strong, nonatomic) UIWindow* window;
 - (id)init;
 - (void)dealloc;
@@ -131,12 +135,13 @@ NSObject* _pushNotificationsDelegate;
 - (void)applicationDidFinishLaunching:(UIApplication*)application
 {
     
+#if JUCE_ENABLE_IOS_STORE_KIT
     _transactionObserver = (NSObject<SKPaymentTransactionObserver>*)juce_GetSKPaymentTransactionObserver();
     jassert(self.transactionObserver);
     jassert([self.transactionObserver isKindOfClass:NSObject.class]);
     jassert([self.transactionObserver conformsToProtocol:@protocol(SKPaymentTransactionObserver)]);
-    
     [SKPaymentQueue.defaultQueue addTransactionObserver:self.transactionObserver];
+#endif
     
     ignoreUnused(application);
     initialiseJuce_GUI();
@@ -156,10 +161,12 @@ NSObject* _pushNotificationsDelegate;
 {
     ignoreUnused(application);
     
+#if JUCE_ENABLE_IOS_STORE_KIT
     if (self.transactionObserver)
         [SKPaymentQueue.defaultQueue removeTransactionObserver:self.transactionObserver];
     else
         jassertfalse;
+#endif
     
     JUCEApplicationBase::appWillTerminateByForce();
 }

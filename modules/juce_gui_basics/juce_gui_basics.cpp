@@ -59,7 +59,9 @@
  #endif
 
  #import <MetalKit/MetalKit.h>
+#if JUCE_ENABLE_IOS_STORE_KIT
  #import <StoreKit/StoreKit.h>
+#endif
  #import <UIKit/UIActivityViewController.h>
 
 //==============================================================================

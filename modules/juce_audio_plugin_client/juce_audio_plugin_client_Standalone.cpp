@@ -38,7 +38,6 @@
 
  #if JUCE_IOS
   extern void* juce_GetIOSCustomDelegateClass();
-  extern void* juce_GetSKPaymentTransactionObserver();
  #endif
 
 #else
