@@ -861,7 +861,7 @@ private:
         setContentOwned (content, resizeAutomatically);
     }
 
-    void buttonClicked (Button*) override
+    void buttonClicked (Button*, const MouseEvent*) override
     {
         PopupMenu m;
         m.addItem (1, TRANS("Audio/MIDI Settings..."));
@@ -1026,7 +1026,7 @@ private:
         }
 
         void valueChanged (Value& value) override     { inputMutedChanged (value.getValue()); }
-        void buttonClicked (Button*) override
+        void buttonClicked (Button*, const MouseEvent*) override
         {
            #if JUCE_IOS || JUCE_ANDROID
             owner.pluginHolder->getMuteInputValue().setValue (false);
