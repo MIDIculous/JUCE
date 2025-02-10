@@ -643,6 +643,10 @@ void JUCE_CALLTYPE NativeMessageBox::showMessageBoxAsync(MessageBoxIconType /*ic
                                                          Component* /*associatedComponent*/,
                                                          ModalComponentManager::Callback* callback)
 {
+    // If callback is NULL, then JUCE actually runs a blocking modal loop, even though the function is called showMessageBox*Async*...so we pass a dummy callback here.
+    if (!callback)
+        callback = ModalCallbackFunction::create([](int) {});
+        
     showDialog(MessageBoxOptions()
                    .withTitle(title)
                    .withMessage(message)
@@ -696,6 +700,10 @@ int JUCE_CALLTYPE NativeMessageBox::showYesNoBox(MessageBoxIconType /*iconType*/
 void JUCE_CALLTYPE NativeMessageBox::showAsync(const MessageBoxOptions& options,
                                                ModalComponentManager::Callback* callback)
 {
+    // If callback is NULL, then JUCE actually runs a blocking modal loop, even though the function is called showMessageBox*Async*...so we pass a dummy callback here.
+    if (!callback)
+        callback = ModalCallbackFunction::create([](int) {});
+    
     showDialog(options, callback, AlertWindowMappings::noMapping);
 }
 
