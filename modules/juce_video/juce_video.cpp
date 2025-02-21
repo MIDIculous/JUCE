@@ -46,6 +46,8 @@
 //==============================================================================
 #elif JUCE_WINDOWS
  #include "wmsdkidl.h"
+ #include "strmif.h"
+ #include "mfplay.h"
  #include "native/juce_win32_ComTypes.h"
 
  #if ! JUCE_MINGW && ! JUCE_DONT_AUTOLINK_TO_WIN32_LIBRARIES
