@@ -100,25 +100,29 @@ namespace AiffFileHelpers
 
         static void create (MemoryBlock& block, const StringPairArray& values)
         {
-            if (values.getAllKeys().contains ("MidiUnityNote", true))
-            {
-                block.setSize ((sizeof (InstChunk) + 3) & ~(size_t) 3, true);
-                auto& inst = *static_cast<InstChunk*> (block.getData());
-
-                inst.baseNote      = getValue8 (values, "MidiUnityNote", "60");
-                inst.detune        = getValue8 (values, "Detune", "0");
-                inst.lowNote       = getValue8 (values, "LowNote", "0");
-                inst.highNote      = getValue8 (values, "HighNote", "127");
-                inst.lowVelocity   = getValue8 (values, "LowVelocity", "1");
-                inst.highVelocity  = getValue8 (values, "HighVelocity", "127");
-                inst.gain          = (int16) getValue16 (values, "Gain", "0");
-
-                inst.sustainLoop.type              = getValue16 (values, "Loop0Type", "0");
-                inst.sustainLoop.startIdentifier   = getValue16 (values, "Loop0StartIdentifier", "0");
-                inst.sustainLoop.endIdentifier     = getValue16 (values, "Loop0EndIdentifier", "0");
-                inst.releaseLoop.type              = getValue16 (values, "Loop1Type", "0");
-                inst.releaseLoop.startIdentifier   = getValue16 (values, "Loop1StartIdentifier", "0");
-                inst.releaseLoop.endIdentifier     = getValue16 (values, "Loop1EndIdentifier", "0");
+            // If *any* Inst metadata is specified, create the Inst chunk and fill any missing values with defaults. For example, write loop metadata even if MidiUnityNote isn't set (#3077).
+            for (auto key : { "MidiUnityNote", "Detune", "LowNote", "HighNote", "LowVelocity", "HighVelocity", "Gain", "Loop0Type", "Loop0StartIdentifier", "Loop0EndIdentifier", "Loop1Type", "Loop1StartIdentifier", "Loop1EndIdentifier" }) {
+                if (values.getAllKeys().contains (key, true))
+                {
+                    block.setSize ((sizeof (InstChunk) + 3) & ~(size_t) 3, true);
+                    auto& inst = *static_cast<InstChunk*> (block.getData());
+                    
+                    inst.baseNote      = getValue8 (values, "MidiUnityNote", "60");
+                    inst.detune        = getValue8 (values, "Detune", "0");
+                    inst.lowNote       = getValue8 (values, "LowNote", "0");
+                    inst.highNote      = getValue8 (values, "HighNote", "127");
+                    inst.lowVelocity   = getValue8 (values, "LowVelocity", "1");
+                    inst.highVelocity  = getValue8 (values, "HighVelocity", "127");
+                    inst.gain          = (int16) getValue16 (values, "Gain", "0");
+                    
+                    inst.sustainLoop.type              = getValue16 (values, "Loop0Type", "0");
+                    inst.sustainLoop.startIdentifier   = getValue16 (values, "Loop0StartIdentifier", "0");
+                    inst.sustainLoop.endIdentifier     = getValue16 (values, "Loop0EndIdentifier", "0");
+                    inst.releaseLoop.type              = getValue16 (values, "Loop1Type", "0");
+                    inst.releaseLoop.startIdentifier   = getValue16 (values, "Loop1StartIdentifier", "0");
+                    inst.releaseLoop.endIdentifier     = getValue16 (values, "Loop1EndIdentifier", "0");
+                    return;
+                }
             }
         }
 
