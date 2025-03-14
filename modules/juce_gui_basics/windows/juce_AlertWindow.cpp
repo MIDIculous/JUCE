@@ -374,10 +374,15 @@ void AlertWindow::updateLayout (const bool onlyIncreaseSize)
     int iconSpace = 0;
 
     AttributedString attributedText;
-    attributedText.append (getName(), lf.getAlertWindowTitleFont());
+    if (getName().isNotEmpty())
+        attributedText.append (getName(), lf.getAlertWindowTitleFont());
 
-    if (text.isNotEmpty())
-        attributedText.append ("\n\n" + text, messageFont);
+    if (text.isNotEmpty()) {
+        if (getName().isNotEmpty())
+            attributedText.append ("\n\n", messageFont);
+        
+        attributedText.append (text, messageFont);
+    }
 
     attributedText.setColour (findColour (textColourId));
 
@@ -397,7 +402,7 @@ void AlertWindow::updateLayout (const bool onlyIncreaseSize)
     w = jmin (w, (int) ((float) getParentWidth() * 0.7f));
 
     auto textLayoutH = (int) textLayout.getHeight();
-    auto textBottom = 16 + titleH + textLayoutH;
+    auto textBottom = 8 + (getName().isNotEmpty() ? titleH : 0) + textLayoutH;
     int h = textBottom;
 
     int buttonW = 40;
