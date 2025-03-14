@@ -623,11 +623,12 @@ static int showDialog(const MessageBoxOptions& options,
 #if JUCE_MODAL_LOOPS_PERMITTED
 void JUCE_CALLTYPE NativeMessageBox::showMessageBox(MessageBoxIconType /*iconType*/,
                                                      const String& title, const String& message,
-                                                    Component* /*associatedComponent*/)
+                                                    Component* associatedComponent)
 {
     showDialog(MessageBoxOptions()
                    .withTitle(title)
                    .withMessage(message)
+                   .withAssociatedComponent(associatedComponent)
                    .withButton(TRANS("OK")),
                 nullptr, AlertWindowMappings::messageBox);
 }
@@ -640,7 +641,7 @@ int JUCE_CALLTYPE NativeMessageBox::show(const MessageBoxOptions& options)
 
 void JUCE_CALLTYPE NativeMessageBox::showMessageBoxAsync(MessageBoxIconType /*iconType*/,
                                                           const String& title, const String& message,
-                                                         Component* /*associatedComponent*/,
+                                                         Component* associatedComponent,
                                                          ModalComponentManager::Callback* callback)
 {
     // If callback is NULL, then JUCE actually runs a blocking modal loop, even though the function is called showMessageBox*Async*...so we pass a dummy callback here.
@@ -650,18 +651,20 @@ void JUCE_CALLTYPE NativeMessageBox::showMessageBoxAsync(MessageBoxIconType /*ic
     showDialog(MessageBoxOptions()
                    .withTitle(title)
                    .withMessage(message)
+                   .withAssociatedComponent(associatedComponent)
                    .withButton(TRANS("OK")),
                 callback, AlertWindowMappings::messageBox);
 }
 
 bool JUCE_CALLTYPE NativeMessageBox::showOkCancelBox(MessageBoxIconType /*iconType*/,
                                                       const String& title, const String& message,
-                                                     Component* /*associatedComponent*/,
+                                                     Component* associatedComponent,
                                                      ModalComponentManager::Callback* callback)
 {
     return showDialog(MessageBoxOptions()
                           .withTitle(title)
                           .withMessage(message)
+                          .withAssociatedComponent(associatedComponent)
                           .withButton(TRANS("OK"))
                           .withButton(TRANS("Cancel")),
                        callback, AlertWindowMappings::okCancel) != 0;
@@ -672,12 +675,13 @@ int JUCE_CALLTYPE NativeMessageBox::showYesNoCancelBox(MessageBoxIconType /*icon
                                                        const String& button1Text,
                                                        const String& button2Text,
                                                        const String& button3Text,
-                                                       Component* /*associatedComponent*/,
+                                                       Component* associatedComponent,
                                                        ModalComponentManager::Callback* callback)
 {
     return showDialog(MessageBoxOptions()
                           .withTitle(title)
                           .withMessage(message)
+                          .withAssociatedComponent(associatedComponent)
                           .withButton(button1Text)
                           .withButton(button2Text)
                           .withButton(button3Text),
@@ -686,12 +690,13 @@ int JUCE_CALLTYPE NativeMessageBox::showYesNoCancelBox(MessageBoxIconType /*icon
 
 int JUCE_CALLTYPE NativeMessageBox::showYesNoBox(MessageBoxIconType /*iconType*/,
                                                   const String& title, const String& message,
-                                                 Component* /*associatedComponent*/,
+                                                 Component* associatedComponent,
                                                  ModalComponentManager::Callback* callback)
 {
     return showDialog(MessageBoxOptions()
                           .withTitle(title)
                           .withMessage(message)
+                          .withAssociatedComponent(associatedComponent)
                           .withButton(TRANS("Yes"))
                           .withButton(TRANS("No")),
                        callback, AlertWindowMappings::okCancel);
