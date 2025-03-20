@@ -150,10 +150,11 @@ const void* MemoryOutputStream::getData() const noexcept
     if (blockToUse == nullptr)
         return externalData;
 
-    if (blockToUse->getSize() > size)
-        static_cast<char*> (blockToUse->getData()) [size] = 0;
+    auto* data = blockToUse->getData();
+    if (data && blockToUse->getSize() > size)
+        static_cast<char*> (data) [size] = 0;
 
-    return blockToUse->getData();
+    return data;
 }
 
 bool MemoryOutputStream::setPosition (int64 newPosition)
