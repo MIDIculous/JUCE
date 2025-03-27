@@ -354,6 +354,7 @@ void Button::triggerClick()
 
 void Button::internalClickCallback (const ModifierKeys& modifiers, const MouseEvent* e)
 {
+    Component::BailOutChecker checker (this);
     if (clickTogglesState)
     {
         const bool shouldBeOn = (radioGroupId != 0 || ! lastToggleState);
@@ -364,7 +365,8 @@ void Button::internalClickCallback (const ModifierKeys& modifiers, const MouseEv
         }
     }
 
-    sendClickMessage (modifiers, e);
+    if (!checker.shouldBailOut())
+        sendClickMessage (modifiers, e);
 }
 
 void Button::flashButtonState()
