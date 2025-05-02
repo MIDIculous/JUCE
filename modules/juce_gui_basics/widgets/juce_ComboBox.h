@@ -144,7 +144,7 @@ public:
 
         @see addItem, getNumItems
     */
-    void clear (NotificationType notification = sendNotificationAsync);
+    void clear (NotificationType notification = sendNotificationSync);
 
     /** Returns the number of items that have been added to the list.
 
@@ -198,7 +198,7 @@ public:
         @see getSelectedId, setSelectedItemIndex, setText
     */
     void setSelectedId (int newItemId,
-                        NotificationType notification = sendNotificationAsync);
+                        NotificationType notification = sendNotificationSync);
 
     //==============================================================================
     /** Returns the index of the item that's currently shown in the box.
@@ -222,7 +222,7 @@ public:
         @see getSelectedItemIndex, setSelectedId, setText
     */
     void setSelectedItemIndex (int newItemIndex,
-                               NotificationType notification = sendNotificationAsync);
+                               NotificationType notification = sendNotificationSync);
 
     //==============================================================================
     /** Returns the text that is currently shown in the combo-box's text field.
@@ -248,7 +248,7 @@ public:
         @see getText
     */
     void setText (const String& newText,
-                  NotificationType notification = sendNotificationAsync);
+                  NotificationType notification = sendNotificationSync);
 
     /** Programmatically opens the text editor to allow the user to edit the current item.
 
