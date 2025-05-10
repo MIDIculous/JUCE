@@ -102,6 +102,7 @@ public:
           iosContentSharingValue                       (settings, Ids::iosContentSharing,                       getUndoManager(), true),
           iosBackgroundAudioValue                      (settings, Ids::iosBackgroundAudio,                      getUndoManager()),
           iosBackgroundBleValue                        (settings, Ids::iosBackgroundBle,                        getUndoManager()),
+          increasedMemoryLimitEnabledValue             (settings, Ids::increasedMemoryLimit,                    getUndoManager()),
           iosPushNotificationsValue                    (settings, Ids::iosPushNotifications,                    getUndoManager()),
           iosAppGroupsValue                            (settings, Ids::iosAppGroups,                            getUndoManager()),
           iCloudPermissionsValue                       (settings, Ids::iCloudPermissions,                       getUndoManager()),
@@ -232,6 +233,7 @@ public:
     bool isNetworkingMulticastEnabled() const               { return networkingMulticastValue.get(); }
     bool isFileSharingEnabled() const                       { return uiFileSharingEnabledValue.get(); }
     bool isDocumentBrowserEnabled() const                   { return uiSupportsDocumentBrowserValue.get(); }
+    bool isIncreasedMemoryLimitEnabled() const              { return increasedMemoryLimitEnabledValue.get(); }
     bool isStatusBarHidden() const                          { return uiStatusBarHiddenValue.get(); }
     bool requiresFullScreen() const                         { return uiRequiresFullScreenValue.get(); }
 
@@ -615,6 +617,9 @@ public:
 
             props.add (new ChoicePropertyComponent (iosBackgroundBleValue, "Bluetooth MIDI Background Capability"),
                        "Enable this to grant your app the capability to connect to Bluetooth LE devices when in background mode.");
+            
+            props.add (new ChoicePropertyComponent (increasedMemoryLimitEnabledValue, "Increased Memory Limit"),
+                       "Informs the system that some of the app's core features may perform better by exceeding the default app memory limit on supported devices.");
 
             props.add (new ChoicePropertyComponent (iosAppGroupsValue, "App Groups Capability"),
                        "Enable this to grant your app the capability to share resources between apps using the same app group ID.");
@@ -1385,6 +1390,7 @@ public:
              || owner.isAppSandboxEnabled()
              || owner.isHardenedRuntimeEnabled()
              || owner.isNetworkingMulticastEnabled()
+             || owner.isIncreasedMemoryLimitEnabled()
              || (owner.isiOS() && owner.isiCloudPermissionsEnabled()))
                 return true;
 
@@ -3185,6 +3191,7 @@ private:
         options.hardenedRuntimeOptions          = getHardenedRuntimeOptions();
         options.appSandboxOptions               = getAppSandboxOptions();
         options.appSandboxTemporaryPaths        = getAppSandboxTemporaryPaths();
+        options.isIncreasedMemoryLimitEnabled   = isIncreasedMemoryLimitEnabled();
 
         const auto entitlementsFile = getTargetFolder().getChildFile (target.getEntitlementsFilename());
         build_tools::overwriteFileIfDifferentOrThrow (entitlementsFile, options.getEntitlementsFileContent());
@@ -3692,7 +3699,7 @@ private:
                                  bluetoothPermissionNeededValue, bluetoothPermissionTextValue,
                                  sendAppleEventsPermissionNeededValue, sendAppleEventsPermissionTextValue,
                                  uiFileSharingEnabledValue, uiSupportsDocumentBrowserValue, uiStatusBarHiddenValue, uiRequiresFullScreenValue, documentExtensionsValue, iosInAppPurchasesValue,
-                                 iosContentSharingValue, iosBackgroundAudioValue, iosBackgroundBleValue, iosPushNotificationsValue, iosAppGroupsValue, iCloudPermissionsValue,
+                                 iosContentSharingValue, iosBackgroundAudioValue, iosBackgroundBleValue, increasedMemoryLimitEnabledValue, iosPushNotificationsValue, iosAppGroupsValue, iCloudPermissionsValue,
                                  networkingMulticastValue, iosDevelopmentTeamIDValue, iosAppGroupsIDValue, keepCustomXcodeSchemesValue, useHeaderMapValue, customLaunchStoryboardValue,
                                  exporterBundleIdentifierValue, suppressPlistResourceUsageValue, useLegacyBuildSystemValue, buildNumber;
 

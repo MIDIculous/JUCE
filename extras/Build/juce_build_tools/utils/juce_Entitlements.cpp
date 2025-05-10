@@ -126,6 +126,9 @@ namespace build_tools
 
         if (isNetworkingMulticastEnabled)
             entitlements.set ("com.apple.developer.networking.multicast", "<true/>");
+        
+        if (isiOS && isIncreasedMemoryLimitEnabled)
+            entitlements.set ("com.apple.developer.kernel.increased-memory-limit", "<true/>");
 
         return entitlements;
     }

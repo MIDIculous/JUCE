@@ -43,6 +43,7 @@ namespace build_tools
         bool isAppSandboxEnabled            = false;
         bool isAppSandboxInhertianceEnabled = false;
         bool isNetworkingMulticastEnabled   = false;
+        bool isIncreasedMemoryLimitEnabled  = false;
 
         String appGroupIdString;
 
