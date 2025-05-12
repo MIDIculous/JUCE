@@ -234,6 +234,7 @@ public:
     bool isFileSharingEnabled() const                       { return uiFileSharingEnabledValue.get(); }
     bool isDocumentBrowserEnabled() const                   { return uiSupportsDocumentBrowserValue.get(); }
     bool isIncreasedMemoryLimitEnabled() const              { return increasedMemoryLimitEnabledValue.get(); }
+    bool isAllFilesAccessEnabled() const                    { return allFilesAccessEnabledValue.get(); }
     bool isStatusBarHidden() const                          { return uiStatusBarHiddenValue.get(); }
     bool requiresFullScreen() const                         { return uiRequiresFullScreenValue.get(); }
 
@@ -1391,6 +1392,7 @@ public:
              || owner.isHardenedRuntimeEnabled()
              || owner.isNetworkingMulticastEnabled()
              || owner.isIncreasedMemoryLimitEnabled()
+             || owner.isAllFilesAccessEnabled()
              || (owner.isiOS() && owner.isiCloudPermissionsEnabled()))
                 return true;
 
@@ -3192,6 +3194,7 @@ private:
         options.appSandboxOptions               = getAppSandboxOptions();
         options.appSandboxTemporaryPaths        = getAppSandboxTemporaryPaths();
         options.isIncreasedMemoryLimitEnabled   = isIncreasedMemoryLimitEnabled();
+        options.isAllFilesAccessEnabled         = isAllFilesAccessEnabled();
 
         const auto entitlementsFile = getTargetFolder().getChildFile (target.getEntitlementsFilename());
         build_tools::overwriteFileIfDifferentOrThrow (entitlementsFile, options.getEntitlementsFileContent());
@@ -3699,7 +3702,7 @@ private:
                                  bluetoothPermissionNeededValue, bluetoothPermissionTextValue,
                                  sendAppleEventsPermissionNeededValue, sendAppleEventsPermissionTextValue,
                                  uiFileSharingEnabledValue, uiSupportsDocumentBrowserValue, uiStatusBarHiddenValue, uiRequiresFullScreenValue, documentExtensionsValue, iosInAppPurchasesValue,
-                                 iosContentSharingValue, iosBackgroundAudioValue, iosBackgroundBleValue, increasedMemoryLimitEnabledValue, iosPushNotificationsValue, iosAppGroupsValue, iCloudPermissionsValue,
+                                 iosContentSharingValue, iosBackgroundAudioValue, iosBackgroundBleValue, increasedMemoryLimitEnabledValue, allFilesAccessEnabledValue, iosPushNotificationsValue, iosAppGroupsValue, iCloudPermissionsValue,
                                  networkingMulticastValue, iosDevelopmentTeamIDValue, iosAppGroupsIDValue, keepCustomXcodeSchemesValue, useHeaderMapValue, customLaunchStoryboardValue,
                                  exporterBundleIdentifierValue, suppressPlistResourceUsageValue, useLegacyBuildSystemValue, buildNumber;
 

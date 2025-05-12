@@ -129,6 +129,9 @@ namespace build_tools
         
         if (isiOS && isIncreasedMemoryLimitEnabled)
             entitlements.set ("com.apple.developer.kernel.increased-memory-limit", "<true/>");
+        
+        if (!isiOS && isAllFilesAccessEnabled)
+            entitlements.set ("com.apple.security.files.all", "<true/>");
 
         return entitlements;
     }
