@@ -127,7 +127,8 @@ namespace build_tools
         if (isNetworkingMulticastEnabled)
             entitlements.set ("com.apple.developer.networking.multicast", "<true/>");
         
-        if (isiOS && isIncreasedMemoryLimitEnabled)
+        // AUv3 doesn't seem to support the increased-memory-limit entitlement (code signing error)
+        if (isiOS && type != ProjectType::Target::AudioUnitv3PlugIn && isIncreasedMemoryLimitEnabled)
             entitlements.set ("com.apple.developer.kernel.increased-memory-limit", "<true/>");
         
         if (!isiOS && isAllFilesAccessEnabled)
