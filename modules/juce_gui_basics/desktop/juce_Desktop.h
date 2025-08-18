@@ -403,6 +403,8 @@ public:
     //==============================================================================
     /** Returns true on a headless system where there are no connected displays. */
     bool isHeadless() const noexcept;
+    
+    ListenerList<MouseListener>& getMouseListeners();
 
 private:
     //==============================================================================
@@ -451,7 +453,6 @@ private:
 
     void timerCallback() override;
     void resetTimer();
-    ListenerList<MouseListener>& getMouseListeners();
 
     void addDesktopComponent (Component*);
     void removeDesktopComponent (Component*);
