@@ -52,10 +52,10 @@ public:
 
         if (topComp->getPeer() != nullptr)
         {
-            auto pos = topComp->getLocalPoint (&owner, Point<int>());
+            auto area = topComp->getLocalArea (&owner, owner.getLocalBounds());
 
-            [view setFrame: CGRectMake ((float) pos.x, (float) pos.y,
-                                        (float) owner.getWidth(), (float) owner.getHeight())];
+            [view setFrame: CGRectMake ((float) area.getX(), (float) area.getY(),
+                                        (float) area.getWidth(), (float) area.getHeight())];
         }
     }
 
