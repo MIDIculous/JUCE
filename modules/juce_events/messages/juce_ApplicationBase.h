@@ -203,7 +203,7 @@ public:
 
         At the moment this method is only called on iOS.
     */
-    virtual void memoryWarningReceived()     { jassertfalse; }
+    virtual void memoryWarningReceived()     {}
     
 #if JUCE_IOS
     /**
