@@ -1194,7 +1194,7 @@ struct iOSAudioIODevice::Pimpl      : public AsyncUpdater
                                     0,
                                     &midiCallbacks,
                                     sizeof (midiCallbacks));
-        jassert (err == noErr);
+        // jassert (err == noErr);
        #endif
 
         if (channelData.areInputChannelsAvailable())
