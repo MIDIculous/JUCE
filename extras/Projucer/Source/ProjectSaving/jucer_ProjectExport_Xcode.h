@@ -3138,9 +3138,10 @@ private:
                                                   : opts.fileRefID;
         v.setProperty ("fileRef", fileRefID, nullptr);
 
-        auto compilerFlags = [&opts]
+        auto compilerFlags = [&]
         {
             return (opts.compilerFlags
+                    + (opts.compile && filename.contains("_arc.m") ? " -fobjc-arc" : String())
                     + (opts.inhibitWarnings ? " -w" : String())
                     + (opts.skipPCH ? " -D" + BuildConfiguration::getSkipPrecompiledHeaderDefine() : String())).trim();
         }();
