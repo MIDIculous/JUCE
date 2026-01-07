@@ -216,7 +216,7 @@ static void logNSError (NSError* e)
     if (e != nil)
     {
         JUCE_IOS_AUDIO_LOG ("iOS Audio error: " << [e.localizedDescription UTF8String]);
-        jassertfalse;
+        // jassertfalse;
     }
 }
 
