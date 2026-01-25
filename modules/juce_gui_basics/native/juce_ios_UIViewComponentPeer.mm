@@ -433,7 +433,7 @@ public:
 
     void updateScreenBounds();
 
-    void handleTouches (UIEvent*, MouseEventFlags);
+    void handleTouches (UIEvent*, NSSet*, MouseEventFlags);
 
    #if JUCE_HAS_IOS_POINTER_SUPPORT
     API_AVAILABLE (ios (13.0)) void onHover (UIHoverGestureRecognizer*);
@@ -829,7 +829,7 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     [super touchesBegan:touches withEvent:event];
 
     if (owner != nullptr)
-        owner->handleTouches (event, MouseEventFlags::down);
+        owner->handleTouches (event, touches, MouseEventFlags::down);
 }
 
 - (void) touchesMoved: (NSSet*) touches withEvent: (UIEvent*) event
@@ -837,7 +837,7 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     [super touchesMoved:touches withEvent:event];
 
     if (owner != nullptr)
-        owner->handleTouches (event, MouseEventFlags::none);
+        owner->handleTouches (event, touches, MouseEventFlags::none);
 }
 
 - (void) touchesEnded: (NSSet*) touches withEvent: (UIEvent*) event
@@ -845,7 +845,7 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     [super touchesEnded:touches withEvent:event];
 
     if (owner != nullptr)
-        owner->handleTouches (event, MouseEventFlags::up);
+        owner->handleTouches (event, touches, MouseEventFlags::up);
 }
 
 - (void) touchesCancelled: (NSSet*) touches withEvent: (UIEvent*) event
@@ -853,7 +853,7 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     [super touchesCancelled:touches withEvent:event];
     
     if (owner != nullptr)
-        owner->handleTouches (event, MouseEventFlags::upAndCancel);
+        owner->handleTouches (event, touches, MouseEventFlags::upAndCancel);
 
     [self touchesEnded: touches withEvent: event];
 }
@@ -2052,7 +2052,7 @@ static float getTouchForce (UITouch* touch) noexcept
     return 0.0f;
 }
 
-void UIViewComponentPeer::handleTouches (UIEvent* event, MouseEventFlags mouseEventFlags)
+void UIViewComponentPeer::handleTouches (UIEvent* event, NSSet* touches_, MouseEventFlags mouseEventFlags)
 {
     if (event == nullptr)
         return;
@@ -2064,7 +2064,7 @@ void UIViewComponentPeer::handleTouches (UIEvent* event, MouseEventFlags mouseEv
     }
    #endif
 
-    NSArray* touches = [[event touchesForView: view] allObjects];
+    NSArray* touches = [touches_ allObjects];
 
     for (unsigned int i = 0; i < [touches count]; ++i)
     {
