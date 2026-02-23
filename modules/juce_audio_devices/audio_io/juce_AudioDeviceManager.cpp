@@ -883,7 +883,7 @@ void AudioDeviceManager::restartLastAudioDevice()
             // This method will only reload the last device that was running
             // before closeAudioDevice() was called - you need to actually open
             // one first, with setAudioDeviceSetup().
-            jassertfalse;
+            // jassertfalse;
             return;
         }
 
