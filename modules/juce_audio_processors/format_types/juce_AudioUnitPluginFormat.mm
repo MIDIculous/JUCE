@@ -384,13 +384,19 @@ namespace AudioUnitFormatHelpers
             {
                 std::vector<size_t> busMap;
 
-                if (const auto layout = tryGetProperty<AudioChannelLayout> (comp, kAudioUnitProperty_AudioChannelLayout, scope, busIndex))
+                UInt32 propertySize = 0;
+                if (AudioUnitGetPropertyInfo (comp, kAudioUnitProperty_AudioChannelLayout, scope, busIndex, &propertySize, nullptr) == noErr && propertySize > 0)
                 {
-                    const auto juceChannelOrder = CoreAudioLayouts::fromCoreAudio (*layout);
-                    const auto auChannelOrder   = CoreAudioLayouts::getCoreAudioLayoutChannels (*layout);
+                    HeapBlock<uint8> layoutData (propertySize);
+                    if (AudioUnitGetProperty (comp, kAudioUnitProperty_AudioChannelLayout, scope, busIndex, layoutData.get(), &propertySize) == noErr)
+                    {
+                        auto* layout = reinterpret_cast<const AudioChannelLayout*> (layoutData.get());
+                        const auto juceChannelOrder = CoreAudioLayouts::fromCoreAudio (*layout);
+                        const auto auChannelOrder   = CoreAudioLayouts::getCoreAudioLayoutChannels (*layout);
 
-                    for (auto juceChannelIndex = 0; juceChannelIndex < juceChannelOrder.size(); ++juceChannelIndex)
-                        busMap.push_back ((size_t) auChannelOrder.indexOf (juceChannelOrder.getTypeOfChannel (juceChannelIndex)));
+                        for (auto juceChannelIndex = 0; juceChannelIndex < juceChannelOrder.size(); ++juceChannelIndex)
+                            busMap.push_back ((size_t) auChannelOrder.indexOf (juceChannelOrder.getTypeOfChannel (juceChannelIndex)));
+                    }
                 }
 
                 busOffset.push_back (busMap.empty() ? unknownChannelCount : channels.size());
@@ -428,10 +434,7 @@ namespace AudioUnitFormatHelpers
 
     static bool isPluginAUv3 (const AudioComponentDescription& desc)
     {
-        if (@available (macOS 10.11, *))
-            return (desc.componentFlags & kAudioComponentFlag_IsV3AudioUnit) != 0;
-
-        return false;
+        return (desc.componentFlags & kAudioComponentFlag_IsV3AudioUnit) != 0;
     }
 }
 
@@ -507,48 +510,21 @@ using AudioUnitCreationCallback = std::function<void (AudioUnit, OSStatus)>;
 
 static void createAudioUnit (VersionedAudioComponent versionedComponent, AudioUnitCreationCallback callback)
 {
-    struct AUAsyncInitializationCallback
-    {
-        typedef void (^AUCompletionCallbackBlock)(AudioComponentInstance, OSStatus);
-
-        explicit AUAsyncInitializationCallback (AudioUnitCreationCallback inOriginalCallback)
-            : originalCallback (std::move (inOriginalCallback))
-        {
-            block = CreateObjCBlock (this, &AUAsyncInitializationCallback::completion);
-        }
-
-        AUCompletionCallbackBlock getBlock() noexcept       { return block; }
-
-        void completion (AudioComponentInstance audioUnit, OSStatus err)
-        {
-            originalCallback (audioUnit, err);
-
-            delete this;
-        }
-
-        double sampleRate;
-        int framesPerBuffer;
-        AudioUnitCreationCallback originalCallback;
-
-        ObjCBlock<AUCompletionCallbackBlock> block;
-    };
-
-    auto callbackBlock = new AUAsyncInitializationCallback (std::move (callback));
-
     if (versionedComponent.isAUv3)
     {
-        if (@available (macOS 10.11, *))
-        {
-            AudioComponentInstantiate (versionedComponent.audioComponent, kAudioComponentInstantiation_LoadOutOfProcess,
-                                       callbackBlock->getBlock());
+        AudioComponentInstantiate (versionedComponent.audioComponent,
+                                   kAudioComponentInstantiation_LoadOutOfProcess,
+                                   ^(AudioComponentInstance audioUnit, OSStatus err)
+                                   {
+                                       callback (audioUnit, err);
+                                   });
 
-            return;
-        }
+        return;
     }
 
     AudioComponentInstance audioUnit;
     auto err = AudioComponentInstanceNew (versionedComponent.audioComponent, &audioUnit);
-    callbackBlock->completion (err != noErr ? nullptr : audioUnit, err);
+    callback (err != noErr ? nullptr : audioUnit, err);
 }
 
 struct AudioComponentResult
@@ -1072,7 +1048,7 @@ public:
                     }
                 }
 
-                if (! set.isDiscreteLayout())
+                if (isInitialized && ! set.isDiscreteLayout())
                 {
                     const AudioChannelLayoutTag requestedTag = CoreAudioLayouts::toCoreAudio (set);
 
@@ -1100,7 +1076,7 @@ public:
                             return false;
 
                         // try to convert the layout into a tag
-                        actualTag = CoreAudioLayouts::toCoreAudio (CoreAudioLayouts::fromCoreAudio (layout));
+                        actualTag = CoreAudioLayouts::toCoreAudio (CoreAudioLayouts::fromCoreAudio (*layoutBuffer.get()));
 
                         if (actualTag != requestedTag)
                         {
@@ -1272,7 +1248,7 @@ public:
 
                     AudioUnitGetProperty (audioUnit, kAudioUnitProperty_SampleRate, scope, static_cast<UInt32> (i), &sampleRate, &sampleRateSize);
 
-                    if (sampleRate != sr)
+                    if (! approximatelyEqual (sampleRate, sr))
                     {
                         if (isAUv3) // setting kAudioUnitProperty_SampleRate fails on AUv3s
                         {
@@ -1316,8 +1292,6 @@ public:
 
             setRateAndBufferSizeDetails ((double) newSampleRate, estimatedSamplesPerBlock);
 
-            updateLatency();
-
             zerostruct (timeStamp);
             timeStamp.mSampleTime = 0;
             timeStamp.mHostTime = mach_absolute_time();
@@ -1343,6 +1317,10 @@ public:
                 {
                     prepared = false;
                     AudioUnitUninitialize (audioUnit);
+                }
+                else
+                {
+                    updateLatency();
                 }
             }
 
@@ -1439,11 +1417,18 @@ public:
                 for (const auto metadata : midiMessages)
                 {
                     if (metadata.numBytes <= 3)
+                    {
+                        const auto getByteOrZero = [&metadata] (int index) {
+                            return index < metadata.numBytes ? metadata.data[index] : (uint8) 0;
+                        };
+
                         MusicDeviceMIDIEvent (audioUnit,
-                                              metadata.data[0], metadata.data[1], metadata.data[2],
+                                              getByteOrZero (0), getByteOrZero (1), getByteOrZero (2),
                                               (UInt32) metadata.samplePosition);
-                    else
+                    }
+                    else {
                         MusicDeviceSysEx (audioUnit, metadata.data, (UInt32) metadata.numBytes);
+                    }
                 }
 
                 midiMessages.clear();
@@ -2423,11 +2408,12 @@ private:
                     busName = nsStringToJuce ((NSString*) busNameCF.object);
 
             {
-                AudioChannelLayout auLayout;
-                propertySize = sizeof (auLayout);
-
-                if (AudioUnitGetProperty (comp, kAudioUnitProperty_AudioChannelLayout, scope, busIdx, &auLayout, &propertySize) == noErr)
-                    currentLayout = CoreAudioLayouts::fromCoreAudio (auLayout);
+                if (AudioUnitGetPropertyInfo (comp, kAudioUnitProperty_AudioChannelLayout, scope, busIdx, &propertySize, nullptr) == noErr && propertySize > 0)
+                {
+                    HeapBlock<uint8> layoutData (propertySize);
+                    if (AudioUnitGetProperty (comp, kAudioUnitProperty_AudioChannelLayout, scope, busIdx, layoutData.get(), &propertySize) == noErr)
+                        currentLayout = CoreAudioLayouts::fromCoreAudio (*reinterpret_cast<const AudioChannelLayout*> (layoutData.get()));
+                }
             }
 
             if (currentLayout.isDisabled())
@@ -2466,11 +2452,13 @@ private:
                 AudioChannelSet currentLayout;
 
                 {
-                    AudioChannelLayout auLayout;
-                    UInt32 propertySize = sizeof (auLayout);
-
-                    if (AudioUnitGetProperty (audioUnit, kAudioUnitProperty_AudioChannelLayout, scope, static_cast<UInt32> (busIdx), &auLayout, &propertySize) == noErr)
-                        currentLayout = CoreAudioLayouts::fromCoreAudio (auLayout);
+                    UInt32 propertySize = 0;
+                    if (AudioUnitGetPropertyInfo (audioUnit, kAudioUnitProperty_AudioChannelLayout, scope, static_cast<UInt32> (busIdx), &propertySize, nullptr) == noErr && propertySize > 0)
+                    {
+                        HeapBlock<uint8> layoutData (propertySize);
+                        if (AudioUnitGetProperty (audioUnit, kAudioUnitProperty_AudioChannelLayout, scope, static_cast<UInt32> (busIdx), layoutData.get(), &propertySize) == noErr)
+                            currentLayout = CoreAudioLayouts::fromCoreAudio (*reinterpret_cast<const AudioChannelLayout*> (layoutData.get()));
+                    }
                 }
 
                 if (currentLayout.isDisabled())
