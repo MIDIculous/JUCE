@@ -423,13 +423,19 @@ void MidiFile::readNextTrack (const uint8* data, int size, bool createMatchingNo
                       [] (const MidiMessageSequence::MidiEventHolder* a,
                           const MidiMessageSequence::MidiEventHolder* b)
     {
+        // Sort by timestamp first
         auto t1 = a->message.getTimeStamp();
         auto t2 = b->message.getTimeStamp();
-
-        if (t1 < t2)  return true;
-        if (t2 < t1)  return false;
-
-        return a->message.isNoteOff() && b->message.isNoteOn();
+        if (t1 != t2)
+            return t1 < t2;
+        
+        // Put note-offs before note-ons (and other messages)
+        bool aIsNoteOff = a->message.isNoteOff();
+        bool bIsNoteOff = b->message.isNoteOff();
+        if (aIsNoteOff != bIsNoteOff)
+            return aIsNoteOff;
+        
+        return false; // Equivalent
     });
 
     if (createMatchingNoteOffs)
