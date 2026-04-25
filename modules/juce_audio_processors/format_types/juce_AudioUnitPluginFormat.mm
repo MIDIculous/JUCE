@@ -1112,12 +1112,23 @@ public:
             {
                 for (const auto metadata : midiMessages)
                 {
-                    if (metadata.numBytes <= 3)
+                    auto message = metadata.getMessage();
+                    if (message.isMetaEvent())
+                    {
+                        // Meta events (0xFF) like track names and time signatures.
+                        // We DO NOT send these to an AudioUnit synth!
+                        continue;
+                    }
+                    else if (message.isSysEx())
+                    {
+                        MusicDeviceSysEx (audioUnit, metadata.data, (UInt32) metadata.numBytes);
+                    }
+                    else if (metadata.numBytes <= 3)
+                    {
                         MusicDeviceMIDIEvent (audioUnit,
                                               metadata.data[0], metadata.data[1], metadata.data[2],
                                               (UInt32) metadata.samplePosition);
-                    else
-                        MusicDeviceSysEx (audioUnit, metadata.data, (UInt32) metadata.numBytes);
+                    }
                 }
 
                 midiMessages.clear();
