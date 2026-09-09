@@ -47,7 +47,7 @@ public:
 
 //------------------------------------------------------------------------
 	// ctors
-	inline FVariant () { memset (this, 0, sizeof (FVariant)); }
+    inline FVariant () { memset ((void*)this, 0, sizeof (FVariant)); }
 	inline FVariant (const FVariant& variant);
 
 	inline FVariant (bool b) : type (kInteger), intValue (b) {}
