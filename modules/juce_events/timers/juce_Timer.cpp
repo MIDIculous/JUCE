@@ -228,10 +228,8 @@ private:
             jassertfalse;
             return;
         }
-        if (timers[pos].timer != t) {
-            jassertfalse;
+        if (timers[pos].timer != t)
             return;
-        }
 
         for (auto i = pos; i < lastIndex; ++i)
         {
